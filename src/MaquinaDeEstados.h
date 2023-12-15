@@ -15,22 +15,25 @@ extern gpio_num_t LED_ESTADO_B;       			//Pino de saida, com led indicando veic
 extern gpio_num_t LED_ESTADO_C;       			//Pino de saida, com led indicando veiculo fechou S2, em recarga (C2)
 extern gpio_num_t LED_ESTADO_ERRO;       		//Pino de saida, com led indicando erro
 extern gpio_num_t BT_INICIAR_RECARGA;   		//Pino de entrada, para setar o inicio da recarga pela Estacao 
+extern gpio_num_t BT_ESTADO_F;   		        //Pino de entrada, para setar o estado F 
 
 
 //Definição da estrutura global
 struct GlobalStruct {
-    int Estado_Veiculo;
-    int Corrente_Do_Cabo;
-    int Corrente_Maxima;
-    int Razao_Ciclica;
-    bool Estacao_Carregando;
+    int Estado_Veiculo;        //Salva o estado do veiculo
+    int Corrente_Do_Cabo;      //Salva a corrente do cabo
+    int Corrente_Maxima;       //Salva a corrente máxima entre Cabo e corrente definida pelo usuário
+    int Razao_Ciclica;         //Salva a razao ciclica
+    bool Estacao_Carregando;   //Indica se a estacao está carregando ou nao
     
     //Variaveis externas
-    int Corrente_Usuario;
-    int Iniciar_Recarga; //Se for 1, coloca a razao ciclica para o valor de corrente existente, caso contário razao em 100%
+    int Corrente_Usuario;          //Valor de corrente definido pelo usuário
+    int Iniciar_Recarga;           //Se for 1, coloca a razao ciclica para o valor de corrente existente, caso contário razao em 100%
+    
+    //Variaveis externas só para printar na tela
     int Contador;
-    int Finalizar_Recarga;  //Valor que indica que a estacao deve abrir dispositivo de manobra caso (Transicao 10.2)
     int Bt_Estado;
+    int Media_Piloto;
 };
 
 //Declaração da variável global

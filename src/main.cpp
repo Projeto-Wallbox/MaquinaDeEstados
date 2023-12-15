@@ -22,7 +22,10 @@ gpio_num_t RELE_L3 = GPIO_NUM_22;   									//Pino de saida, para acionar o Rel
 gpio_num_t LED_ESTADO_B = GPIO_NUM_2;       					//Pino de saida, led indicando veiculo conectado
 gpio_num_t LED_ESTADO_C = GPIO_NUM_4;       					//Pino de saida, led indicando veiculo fechou S2, em recarga (C2)
 gpio_num_t LED_ESTADO_ERRO = GPIO_NUM_5;       				//Pino de saida, com led indicando erro
+
 gpio_num_t BT_INICIAR_RECARGA = GPIO_NUM_14;   				//Pino de entrada, para setar o inicio da recarga pela Estacao 
+gpio_num_t BT_ESTADO_F = GPIO_NUM_34;   				      //Pino de entrada, para alterar erros pela Estacao 
+
 
 //DEFINIR VARIAVEIS--------------------------------------------------------------------------------------------
 static ledc_channel_config_t ledc_channel;        
@@ -52,6 +55,8 @@ void setup()
 	gpio_set_direction(RELE_L2, GPIO_MODE_OUTPUT);    				//Define pino como saida
 	gpio_set_direction(RELE_L3, GPIO_MODE_OUTPUT);    				//Define pino como saida
 	gpio_set_direction(BT_INICIAR_RECARGA, GPIO_MODE_INPUT);  //Define pino como entrada
+	gpio_set_direction(BT_ESTADO_F, GPIO_MODE_INPUT);  				//Define pino como entrada
+
 
 	//CONFIGURA OS CANAIS ADC ---------------------------------------------------------------------------
 	esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_12Bit, 0, &adc_chars);

@@ -64,13 +64,14 @@ int funcaoInterrupcao()
 			Dados.Corrente_Do_Cabo = cabo_conectado;
 			Dados.Corrente_Maxima = corrente_maxima;
 			Dados.Razao_Ciclica = razao_ciclica;
+			Dados.Media_Piloto = media_piloto;
+
 			measure_two = 0;
 		}
 		else
 		{
 			if (printar >= 6000) // a cada 1000 ms (1 Hz)
 			{ 
-
 				acendeLed();
 				printTela();
 				printar = 0;
@@ -279,10 +280,10 @@ int chargingStationMain(int estado, int corrente_maxima)
   static int esta_carregando = 0;         // detecta se_ a estacaoo de recarga esta carregando
   static int bloqueio_contatora = 0;      // bloqueia a contatora por 6 segundos caso entre no modo ventilacaoo
   static int bloqueio_razao_ciclica = 0;  // Variavel que bloqueia a alteracao da razao ciclica por 5 segundos
-  static int abrir_dispositvo_erroS2 = 0; // finalizar_recarga Abrir dispositivo de manobra (Transicao 10.2)
+  //static int abrir_dispositvo_erroS2 = 0; // finalizar_recarga Abrir dispositivo de manobra (Transicao 10.2)
 	static int cont = 0;
   
-  Dados.Estacao_Carregando = esta_carregando; 								//Atualiza esta informacao na estrutura;
+  Dados.Estacao_Carregando = contatora; 								//Atualiza esta informacao na estrutura;
   
   //***************Codigo da Corrente na estacao e da contatora*************************
   //ETAPA DA LOGICA DO ACIONAMENTO DA CONTATORA - **fazer uma logica de acionamento para os reles
@@ -290,7 +291,6 @@ int chargingStationMain(int estado, int corrente_maxima)
   {
     corrente_da_estacao = 0; 
     contatora = 0;
-    //gpio_set_level(RELE_N, false); // Desliga Dispositivo de manobra
 		dispositivoDeManobra(contatora);
     esta_carregando = 0;
     if ((estado == 0) || (estado == -12))  //mantem dispositivo de manobra desligado
@@ -311,7 +311,6 @@ int chargingStationMain(int estado, int corrente_maxima)
       corrente_da_estacao = 0;
       contatora = 1;
       dispositivoDeManobra(contatora);
-			//gpio_set_level(RELE_N, true); // Liga Dispositivo de manobra
       if (l == 1)
       {
         k = k + l;
@@ -333,15 +332,22 @@ int chargingStationMain(int estado, int corrente_maxima)
       {
         if (estado==6)
         {
-					if(abrir_dispositvo_erroS2==0){
+					if(razao>=100 && razao<1000 && Dados.Iniciar_Recarga == 1){ //ESTADO C2
 						contatora = 1;
          		dispositivoDeManobra(contatora);
-						//gpio_set_level(RELE_N, true); // Liga Dispositivo de manobra
          		esta_carregando = 1;
-					}else{
-						Dados.Iniciar_Recarga = 0;
-						contatora = 0;
-         		dispositivoDeManobra(contatora);
+						cont=0;
+
+					}else{//ESTADO C1
+						if(cont >= 6000){  //min 6S
+							contatora = 0;
+							dispositivoDeManobra(contatora);
+						}else{
+							cont++;
+						}
+						//Dados.Iniciar_Recarga = 0;
+						//contatora = 0;
+         		//dispositivoDeManobra(contatora);
 					} 
 
 					if(Dados.Iniciar_Recarga == 0){  //Razao de 100% quando ir para o estado A ou quando iniciar_recarga esta "desligado"
@@ -352,15 +358,14 @@ int chargingStationMain(int estado, int corrente_maxima)
         {//ALTERADO
           if((estado == 12)||(Dados.Iniciar_Recarga == 0)){  //Razao de 100% quando ir para o estado A ou quando iniciar_recarga esta "desligado"
             razao = 1002;
+						Dados.Iniciar_Recarga = 0;
           }
           contatora = 0;
 					dispositivoDeManobra(contatora);
-          //gpio_set_level(RELE_N, false); // Desliga Dispositivo de manobra
           esta_carregando = 0;
-					abrir_dispositvo_erroS2 = 0;  //variável de controle relacionado a transicao 10.2
-					cont = 0;                     //contador relacionado a transicao 10.2
+					cont = 0;                             //contador relacionado a transicao 10.2
         }
-        corrente_da_estacao = corrente_maxima;  //AQUI ERA ALTERADO O VALOR DA CORRENTE
+        corrente_da_estacao = corrente_maxima; 
       }
 			else
       {
@@ -372,16 +377,8 @@ int chargingStationMain(int estado, int corrente_maxima)
     }
   }
 
-  //LOGICA DA ABERTURA DA CONTATORA CASO O VEICULO NAO ABRA S2 (SEQUENCIA 10.2)
-	Dados.Finalizar_Recarga = abrir_dispositvo_erroS2;
-	Dados.Contador = cont;
-	if(razao>=1000 && estado==6){ //ver da corrente
-		if(cont >= 6000){  //min 6S
-			abrir_dispositvo_erroS2 = 1;
-		}else{
-			cont++;
-		}
-	}
+	Dados.Contador = cont;//Só para msotar o estado da variável cont
+
 
   // *************************** Codigo do Gerado PWM *************************************
   // LOGICA DO BLOQUEIO DA RAZAO CICLICA (SEQUENCIA 6)
@@ -452,7 +449,7 @@ void acendeLed(){
   
 	//Estado de Erro
 	if(Dados.Estado_Veiculo == 0 || Dados.Estado_Veiculo == -12 ){
-		ledEstadoErro = !ledEstadoErro;
+		//ledEstadoErro = !ledEstadoErro;
 		gpio_set_level(LED_ESTADO_ERRO, true);
 	}else{gpio_set_level(LED_ESTADO_ERRO, false);}
 
@@ -488,13 +485,13 @@ void dispositivoDeManobra(int acao){
 //Funcao auxiliar só para printar na tela
 void printTela(){
 	printf("Estado: %d\n", Dados.Estado_Veiculo);
+	printf("AD CP: %d\n", Dados.Media_Piloto);
 	printf("Cabo: %d\n", Dados.Corrente_Do_Cabo);
 	printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
-	printf("Corrente_max: %d\n\n", Dados.Corrente_Maxima);
-				
+	printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
+	printf("Razao: %d\n\n", Dados.Razao_Ciclica);
+
 	printf("Iniciar_Recarga: %d\n", Dados.Iniciar_Recarga);
-	printf("Razao: %d\n", Dados.Razao_Ciclica);
 	printf("Carregando: %d\n", Dados.Estacao_Carregando);
-	printf("Finalizar: %d\n", Dados.Finalizar_Recarga);
 	printf("Contador: %d\n\n", Dados.Contador);
 }
