@@ -1,4 +1,5 @@
-Branch de Otimizações na Máquina de Estados
+##Branch de Otimizações na Máquina de Estados
+
 Esta branch foi criada com o propósito de implementar otimizações e ajustes na máquina de estados do projeto. Aqui serão realizadas as modificações necessárias para melhorar o desempenho, corrigir bugs e aprimorar a eficiência geral da máquina de estados.
 
 Objetivos Principais
