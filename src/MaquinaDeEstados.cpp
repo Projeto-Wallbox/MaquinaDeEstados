@@ -87,180 +87,178 @@ int funcaoInterrupcao()
 //Funcao que calcula media dos sinais lidos no AD Piloto
 int positivaPiloto(int piloto)
 {
-	// printf("P_Piloto\n");
-	static int j = 0;											 // L�gica de determina��o do valor m�ximo de um per�odo
-	static int media[5] = {0, 0, 0, 0, 0}; // 5 maiores valores medidos em um per�odo
-	static int media_piloto = 4000;
-
-	if (j >= 1023) // if(j>=1023)
+	static int j=0;											//Lógica de determinação do valor máximo de um período
+	static int media[5]={0,0,0,0,0};			//5 maiores valores medidos em um período
+	static int media_piloto=4000;
+	
+	if(j>=120)		//Quando atinge 120 amostras reinicia o processo de coleta de dados
 	{
-		media[0] = 0;
-		media[1] = 0;
-		media[2] = 0;
-		media[3] = 0;
-		media[4] = 0;
-		j = 0;
-		media_piloto = media_piloto; // @suppress("Assignment to itself")
+		media[0]=0;
+		media[1]=0;
+		media[2]=0;
+		media[3]=0;
+		media[4]=0;
+		j=0;
+		media_piloto=media_piloto;
 	}
-	else
+	else							//Quando ainda não atingiu 120 amostras continua o processo de amostragem
 	{
 		j++;
-		if ((piloto > media[0]) || (piloto > media[1]) || (piloto > media[2]) || (piloto > media[3]) || (piloto > media[4]))
+		//Se a amostra for maior armazene em um dos espaços
+		if((piloto>media[0])||(piloto>media[1])||(piloto>media[2])||(piloto>media[3])||(piloto>media[4]))
 		{
-			if (piloto > media[0])
+			if(piloto>media[0])
 			{
-				media[0] = piloto + 1;
+				media[0]=piloto;
 			}
 			else
-			{
-				if (piloto > media[1])
+			{	
+				if(piloto>media[1])
 				{
-					media[1] = piloto + 1;
+					media[1]=piloto;
 				}
 				else
-				{
-					if (piloto > media[2])
+				{		
+					if(piloto>media[2])
 					{
-						media[2] = piloto + 1;
-					}
+						media[2]=piloto;
+					}		
 					else
 					{
-						if (piloto > media[3])
+						if(piloto>media[3])
 						{
-							media[3] = piloto + 1;
+							media[3]=piloto;
 						}
 						else
 						{
-							if (piloto > media[4])
+							if(piloto>media[4])
 							{
-								media[4] = piloto + 1;
+								media[4]=piloto;
 							}
 							else
 							{
-								media[0] = media[0];
-								media[1] = media[1];
-								media[2] = media[2];
-								media[3] = media[3];
-								media[4] = media[4];
+								media[0]=media[0];
+								media[1]=media[1];
+								media[2]=media[2];
+								media[3]=media[3];
+								media[4]=media[4];
 							}
 						}
 					}
 				}
 			}
 		}
-		else
+		else				//Se for menor ou igual não armazene
 		{
-			media_piloto = media_piloto;
+			media_piloto=media_piloto;
 		}
-
-		if (j < 923) // if(j<923)
+		if(j<120)		//Antes da amostra 120 não atualize a média do piloto, ou seja, não atualize a média dentro de 20 ms da última atualização
 		{
-			media_piloto = media_piloto;
+			media_piloto=media_piloto;
 		}
-		else
+		else				//Na amostra 120 atualize a média piloto, ou seja, 20 ms após a última atualização
 		{
-			media_piloto = (media[0] + media[1] + media[2] + media[3] + media[4]) / 5;
+			media_piloto=(media[0]+media[1]+media[2]+media[3]+media[4])/5;
 		}
 	}
-
 	return media_piloto;
 }
 
 //Funcao que define o cabo conectado, de acordo com a Leitura AD Proximidade
 int correnteCabo(int proximidade) {
-	//printf("Coorente_Cabo\n");
 	static int corrente_cabo=0;
-
-	if(proximidade<(392))															//if(proximidade<(((60*3.3)/(60+470))*(4095/3.9)))
+	
+	//Fórmula de cálculo: Exemplo cabo 32 A (Nominal 220 ohms, 164 a 308 ohms), para 164 ohms temos: {[(164)/(164+470)]*4095}
+	
+	if(proximidade<(464))															//Menor que 60 ohms (curto-circuito)
 	{
 		corrente_cabo=0;
 	}
 	else
 	{
-		if(proximidade>(546)&&(proximidade<(861))) 				//if(proximidade>(((80*3.3)/(80+470))*(4095/3.6))&&(proximidade<(((140*3.3)/(140+470))*(4095/3.6))))
+		if(proximidade>(595)&&(proximidade<(940))) 				//Entre 80 e 140 ohms (nominal 100 ohms)
 		{
 			corrente_cabo=63;
 		}
 		else
 		{
-			if(proximidade>(1013)&&(proximidade<(1550)))			//if(proximidade>(((164*3.3)/(164+470))*(4095/3.45))&&(proximidade<(((308*3.3)/(308+470))*(4095/3.45))))
+			if(proximidade>(1059)&&(proximidade<(1622)))			//Entre 164 e 308 ohms (nominal 220 ohms)
 			{
 				corrente_cabo=32;
 			}
 			else
 			{
-				if(proximidade>(1854)&&(proximidade<(2685)))			//if(proximidade>(((400*3.3)/(400+470))*(4095/3.35))&&(proximidade<(((936*3.3)/(936+470))*(4095/3.35))))
+				if(proximidade>(1882)&&(proximidade<(2726)))			//Entre 400 e 936 ohms (nominal 680 ohms)
 				{
 					corrente_cabo=20;
 				}
 				else
 				{
-					if(proximidade>(2750)&&(proximidade<(3386))) 		//if(proximidade>(((1100*3.3)/(1100+470))*(4095/3.35))&&(proximidade<(((2460*3.3)/(2460+470))*(4095/3.35))))
+					if(proximidade>(2869)&&(proximidade<(3439))) 		//Entre 1100 e 2460 ohms (nominal 1500 ohms)
 					{
 						corrente_cabo=13;
 					}
 					else
 					{
-						if(proximidade>(3600))													//if(proximidade>(((4499*3.3)/(4500+470))*(4095/3.35)))
+						if(proximidade>(3707))													//Maior que 4500 ohms (circuito aberto)
 						{
-							corrente_cabo = 0;
+							corrente_cabo=0;
 						}
 						else
 						{
-							corrente_cabo = 0;
+							corrente_cabo=0;
 						}
 					}
 				}
 			}
 		}
 	}
-
-  return corrente_cabo;
+	return corrente_cabo;
 }
 
 //Funcao que define o Estado de acordo com a media dos valores AD Piloto
 int defineEstado(int media_x1)
-{
-	//printf("Estado\n");
-	static int estado=12;
+{	static int estado=12;		//Inicia do Estado A
+	
+	//Fórmula de cálcula: Exemplo estado C (+5 a +7 V), para 5 V temos: {[(5+12)/(24)]*4095}
 
-	if(media_x1>3900)				
+	if(media_x1>3926)				//Maior que +11 V
 	{
-		estado=12;
+		estado=12;		
 	}
 	else
 	{
-		if((media_x1>2500)&&(media_x1<3900))
+		if((media_x1>3412)&&(media_x1<3754))		//Entre +8 V e +10 V
 		{
 		estado=9;
 		}
 		else
 		{
-			if((media_x1>1900)&&(media_x1<2400))
+			if((media_x1>2900)&&(media_x1<3242))		//Entre +5 V e +7 V
 			{
 				estado=6;
 			}
 			else
 			{
-				if((media_x1>700)&&(media_x1<1900))
+				if((media_x1>2388)&&(media_x1<2730))		//Entre +2 V e +4 V
 				{
 					estado=3;
 				}
 				else
 				{
-					if((media_x1>500)&&(media_x1<700))
+					if((media_x1>1876)&&(media_x1<2218))		//Entre -1 V e +1 V
 					{
 						estado=0;
 					}
 					else
 					{
-						if(media_x1<200)
+						if(media_x1<1876)												//Entre -1 V e -12 V
 						{
 							estado=-12;
 						}
 						else
 						{
-							estado = estado;
+							estado=estado;													//Se está na faixa de nenhum estado, mantenha no estado anterior.
 						}
 					}
 				}
@@ -279,11 +277,11 @@ int chargingStationMain(int estado, int corrente_cabo)
 	static int m=0;												      //Contador do bloqueio da razão cíclica
 	static int corrente_da_estacao=0;			      //Corrente máxima que a estaçao irá fornecer
 	static int cont = 0;
-	static bool estado_F=false;									//Variével que altera o valor da razão cíclica para 0
+	static bool estado_F=false;									//Altera o valor da razão cíclica para 0 quando true (estação com algum erro/não estiver pronta)
 	static bool estadoDispositivoManobra=false;	//Estado do dispositivo de manobra
 	static bool bloqueio_contatora=false;				//Variável que bloqueia a contatora por 6 segundo caso entre no modo ventilação
 	static bool bloqueio_razao_ciclica=false;		//Variável que bloqueia a alteração da razão cíclica por 5 segundos
-	static bool iniciar_recarga=false;					//Variável que bloqueia a alteração da razão cíclica por 5 segundos
+	static bool iniciar_recarga=false;					//Variável para autorizar o inicio de recarga
 
 	estado_F = gpio_get_level(GPIO_NUM_23);
 	iniciar_recarga = Dados.Iniciar_Recarga;
@@ -393,7 +391,7 @@ int chargingStationMain(int estado, int corrente_cabo)
 	return razao;
 }
 
-//Funcao para controle dos led indicadores
+//Funcao para controle dos led indicadores ()
 void acendeLed(){
 	static bool ledEstadoC = false;
 	static bool ledEstadoErro = false;
@@ -417,7 +415,7 @@ void acendeLed(){
 
 }
 
-//Funcao para controle do incio/fim de recarga pelo botao 
+//Funcao para controle do incio/fim de recarga pelo botao físico
 void leBotao(){ 
 		static int cont = 0;
     int bt_estado = gpio_get_level(BT_INICIAR_RECARGA);
@@ -444,7 +442,7 @@ void dispositivoDeManobra(int acao){
 	}
 }
 
-//Funcao auxiliar só para printar na tela
+//Funcao auxiliar só para printar na tela (Temporária)
 void printTela(){
 	printf("Estado: %d\n", Dados.Estado_Veiculo);
 	printf("AD CP: %d\n", Dados.Media_Piloto);
