@@ -30,7 +30,7 @@ gpio_num_t BT_ESTADO_F = GPIO_NUM_34;   				      //Pino de entrada, para altera
 //DEFINIR VARIAVEIS--------------------------------------------------------------------------------------------
 static ledc_channel_config_t ledc_channel;        
 static esp_adc_cal_characteristics_t adc_chars;  			//Fornecido pela Esressif para calibracao do ADC
-int Razao_Ciclica_PWM = 1000;  												//Variavel que armazena valor da razao cicllica
+int Razao_Ciclica_PWM = 1023;  												//Variavel que armazena valor da razao cicllica
 
 //FUNCAO DE INTERRUPCAO DO TIMER
 void timer_callback(void *param){
@@ -41,7 +41,7 @@ void timer_callback(void *param){
 
 void setup()
 {
-	Dados.Corrente_Usuario = 35;                  //Valor de corrente externo usuario/APP/OCPP
+	Dados.Corrente_Usuario = 22;                  //Valor de corrente externo usuario/APP/OCPP
 	Dados.Iniciar_Recarga = 0;                    //valor alterado para iniciar ou encerrar recarga usuario/APP/OCPP
 
 	gpio_set_direction(PINO_PWM, GPIO_MODE_OUTPUT);  					//Define pino como saida

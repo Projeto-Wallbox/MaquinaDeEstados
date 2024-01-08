@@ -222,37 +222,37 @@ int defineEstado(int media_x1)
 	
 	//Fórmula de cálcula: Exemplo estado C (+5 a +7 V), para 5 V temos: {[(5+12)/(24)]*4095}
 
-	if(media_x1>3926)				//Maior que +11 V
+	if(media_x1>3900)				//Maior que +11 V
 	{
 		estado=12;		
 	}
 	else
 	{
-		if((media_x1>3412)&&(media_x1<3754))		//Entre +8 V e +10 V
+		if((media_x1>2500)&&(media_x1<3900))		//Entre +8 V e +10 V
 		{
 		estado=9;
 		}
 		else
 		{
-			if((media_x1>2900)&&(media_x1<3242))		//Entre +5 V e +7 V
+			if((media_x1>1900)&&(media_x1<2400))		//Entre +5 V e +7 V
 			{
 				estado=6;
 			}
 			else
 			{
-				if((media_x1>2388)&&(media_x1<2730))		//Entre +2 V e +4 V
+				if((media_x1>700)&&(media_x1<1900))		//Entre +2 V e +4 V
 				{
 					estado=3;
 				}
 				else
 				{
-					if((media_x1>1876)&&(media_x1<2218))		//Entre -1 V e +1 V
+					if((media_x1>500)&&(media_x1<700))		//Entre -1 V e +1 V
 					{
 						estado=0;
 					}
 					else
 					{
-						if(media_x1<1876)												//Entre -1 V e -12 V
+						if(media_x1<200)												//Entre -1 V e -12 V
 						{
 							estado=-12;
 						}
@@ -269,7 +269,7 @@ int defineEstado(int media_x1)
 }
 
 //Funcao que contém a logica de comutacao do dispositivo de manobra
-int chargingStationMain(int estado, int corrente_cabo)
+int chargingStationMain(int estado, int corrente_max)
 {	//Entra nessa lógica 1 vez a cada ciclo do PWM (1 kHz)
 	
 	static int razao=1000;											//Razão cíclica do PWM
@@ -286,50 +286,55 @@ int chargingStationMain(int estado, int corrente_cabo)
 	estado_F = gpio_get_level(GPIO_NUM_23);
 	iniciar_recarga = Dados.Iniciar_Recarga;
 	Dados.Contador = cont;
+	Dados.Estacao_Carregando = estadoDispositivoManobra;
+	Dados.Corrente_Estacao = corrente_da_estacao; 
 //******Lógica que decide qual será a corrente máxima da estação e o estado da contatora*********************
 	//Lógica para os Estados: A, B, E e F ou cabo desconectado
-	if((estado==12)||(estado==9)||(estado==0)||(estado==-12)||(corrente_cabo==0))			
+	if((estado==12)||(estado==9)||(estado==0)||(estado==-12)||(corrente_max==0))			
 	{
 		estadoDispositivoManobra=false;
 		dispositivoDeManobra(estadoDispositivoManobra);
 		bloqueio_contatora=false;
 		k=0;
-		cont = 0;
-		if(estado==9)		//Se Estado B ative o PWM
+		//cont = 0;
+		if(estado ==9 && iniciar_recarga== 1)		//Se Estado B ative o PWM
 		{
-			corrente_da_estacao=corrente_cabo;
+			corrente_da_estacao=corrente_max;
 		}
 		else
 		{
 			corrente_da_estacao=0;
 		}
+
+		if(estado ==9){cont = 0;}
 	}
 	//Lógica para os Estados C e D com cabo conectado
 	else
 	{	
 		//Lógica para o Estado C
-		if(estado==6)
+		if(estado==6 && iniciar_recarga == 1)
 		{
 			k=0;
-			corrente_da_estacao=corrente_cabo;
-			if(razao!=1000 && iniciar_recarga == 1)			//A contatora não pode fechar antes de o PWM indicar a estação como pronta
+			corrente_da_estacao=corrente_max;
+			if(razao!=1023 && iniciar_recarga == 1)			//A contatora não pode fechar antes de o PWM indicar a estação como pronta
 			{
 				cont = 0;
 				bloqueio_contatora=true;
 				estadoDispositivoManobra=true;
 				dispositivoDeManobra(estadoDispositivoManobra);
-			}else{                // Lógica de abertura da contatora, não responta ao término da recarga (Transição 10.2)
-				if(cont >= 6000){   //Minimo 6 segundos
-							estadoDispositivoManobra = 0;
-							dispositivoDeManobra(estadoDispositivoManobra);
-					}else{
-							cont++;
-					}
-			}
+			}             
 		}
 		//Lógica para o Estado D
 		else
-		{
+		{ // Lógica de abertura da contatora, não responta ao término da recarga (Transição 10.2)
+			if(cont >= 6000){   //Minimo 6 segundos
+							estadoDispositivoManobra = 0;
+							dispositivoDeManobra(estadoDispositivoManobra);
+					}else{
+							estadoDispositivoManobra = 1;
+							dispositivoDeManobra(estadoDispositivoManobra);
+							cont++;
+					}
 			//Lógica para transição do Estado C para o D com a contatora já fechada
 			if((bloqueio_contatora==true)&&(estado==3))
 			{
@@ -346,22 +351,30 @@ int chargingStationMain(int estado, int corrente_cabo)
 			//Lógica para 6 segundos após a transição do Estado C para o D ou contatora aberta durante a transição
 			else
 			{
+				if(cont >= 6000){   //Minimo 6 segundos
+							estadoDispositivoManobra = 0;
+							dispositivoDeManobra(estadoDispositivoManobra);
+				}else{
+						estadoDispositivoManobra = 1;
+						dispositivoDeManobra(estadoDispositivoManobra);
+						corrente_da_estacao=2;   ////////////////////////////
+				}
 				k=0;
 				bloqueio_contatora=false;
-				corrente_da_estacao=0;
-				estadoDispositivoManobra=false;
-				dispositivoDeManobra(estadoDispositivoManobra);
+				//corrente_da_estacao=3; ////7777777777777777777777777777777777777
+				//estadoDispositivoManobra=false;
+				//dispositivoDeManobra(estadoDispositivoManobra);
 			}
 		}
 	}
 
 	//************Codificação da corrente máxima da estação através da razão cíclica do PWM***********************
 	//Lógica caso a estação não esteja pronta para fornecer energia
-	if(corrente_da_estacao==0 || iniciar_recarga == 0)
+	/*if(corrente_da_estacao==0 || iniciar_recarga == 0)
 	{
-		razao=1000;
+		razao=1023;
 	}
-	
+	*/
 	//Lógica do bloqueio da razão cíclica
 	if(bloqueio_razao_ciclica==true)
 	{
@@ -377,8 +390,8 @@ int chargingStationMain(int estado, int corrente_cabo)
 	if(bloqueio_razao_ciclica==false)
 	{	
 		if(corrente_da_estacao>=6 && corrente_da_estacao<=32){
-				razao = (corrente_da_estacao/0.6)*(1023/100);
-		}else{razao = 1000;}
+				razao = ((corrente_da_estacao/0.6)*(1023))/100;
+		}else{razao = 1023;}
 		
 		bloqueio_razao_ciclica=true;
 	}
@@ -445,12 +458,12 @@ void dispositivoDeManobra(int acao){
 //Funcao auxiliar só para printar na tela (Temporária)
 void printTela(){
 	printf("Estado: %d\n", Dados.Estado_Veiculo);
-	printf("AD CP: %d\n", Dados.Media_Piloto);
 	printf("Cabo: %d\n", Dados.Corrente_Do_Cabo);
 	printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
 	printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
 	printf("Razao: %d\n\n", Dados.Razao_Ciclica);
 
+	printf("Corrente_estacao: %d\n", Dados.Corrente_Estacao);
 	printf("Iniciar_Recarga: %d\n", Dados.Iniciar_Recarga);
 	printf("Carregando: %d\n", Dados.Estacao_Carregando);
 	printf("Contador: %d\n\n", Dados.Contador);

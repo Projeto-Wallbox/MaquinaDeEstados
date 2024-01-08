@@ -23,6 +23,7 @@ struct GlobalStruct {
     int Estado_Veiculo;        //Salva o estado do veiculo
     int Corrente_Do_Cabo;      //Salva a corrente do cabo
     int Corrente_Maxima;       //Salva a corrente máxima entre Cabo e corrente definida pelo usuário
+    int Corrente_Estacao;
     int Razao_Ciclica;         //Salva a razao ciclica
     bool Estacao_Carregando;   //Indica se a estacao está carregando ou nao
     
