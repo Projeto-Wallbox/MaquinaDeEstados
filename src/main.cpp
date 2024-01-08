@@ -13,18 +13,18 @@
 gpio_num_t PINO_PILOTO = GPIO_NUM_32;        					//Pino para leitura AD do Sinal VA
 gpio_num_t PINO_PROXIMIDADE = GPIO_NUM_33;   					//Pino para leitura AD do do cabo conectado
 gpio_num_t PINO_PWM = GPIO_NUM_15;           					//Pino no qual é gerado o sinal PWM
-gpio_num_t RELE_N = GPIO_NUM_18;   										//Pino de saida, para acionar o Relé do Neutro (N)
+gpio_num_t RELE_N = GPIO_NUM_26;   										//Pino de saida, para acionar o Relé do Neutro (N)
 gpio_num_t RELE_L1 = GPIO_NUM_19;   									//Pino de saida, para acionar o Relé da fase 1 (L1)
 gpio_num_t RELE_L2 = GPIO_NUM_21;   									//Pino de saida, para acionar o Relé da fase 2 (L2)
 gpio_num_t RELE_L3 = GPIO_NUM_22;   									//Pino de saida, para acionar o Relé da fase 3 (L3)
 
-
-gpio_num_t LED_ESTADO_B = GPIO_NUM_2;       					//Pino de saida, led indicando veiculo conectado
-gpio_num_t LED_ESTADO_C = GPIO_NUM_4;       					//Pino de saida, led indicando veiculo fechou S2, em recarga (C2)
-gpio_num_t LED_ESTADO_ERRO = GPIO_NUM_5;       				//Pino de saida, com led indicando erro
+gpio_num_t LED_A = GPIO_NUM_2;												//Led de EVSE ON/OF
+gpio_num_t LED_B = GPIO_NUM_18;       								//Led de carregamento
+gpio_num_t LED_C = GPIO_NUM_4;       									//Led de conexao a rede Wi-fi
+gpio_num_t LED_D = GPIO_NUM_5;       				  				//Led de erro ou falha
 
 gpio_num_t BT_INICIAR_RECARGA = GPIO_NUM_14;   				//Pino de entrada, para setar o inicio da recarga pela Estacao 
-gpio_num_t BT_ESTADO_F = GPIO_NUM_34;   				      //Pino de entrada, para alterar erros pela Estacao 
+gpio_num_t BT_ESTADO_F = GPIO_NUM_23;   				      //Pino de entrada, para alterar erros pela Estacao 
 
 
 //DEFINIR VARIAVEIS--------------------------------------------------------------------------------------------
@@ -45,13 +45,17 @@ void setup()
 	Dados.Iniciar_Recarga = 0;                    //valor alterado para iniciar ou encerrar recarga usuario/APP/OCPP
 
 	gpio_set_direction(PINO_PWM, GPIO_MODE_OUTPUT);  					//Define pino como saida
-	gpio_set_direction(LED_ESTADO_C, GPIO_MODE_OUTPUT);  			//Define pino como saida
-	gpio_set_direction(LED_ESTADO_B, GPIO_MODE_OUTPUT);  			//Define pino como saida
-	gpio_set_direction(LED_ESTADO_ERRO, GPIO_MODE_OUTPUT);    //Define pino como saida
+	
+	gpio_set_direction(LED_A, GPIO_MODE_OUTPUT);  			//Define pino como saida
+	gpio_set_direction(LED_B, GPIO_MODE_OUTPUT);  			//Define pino como saida
+	gpio_set_direction(LED_C, GPIO_MODE_OUTPUT);    		//Define pino como saida
+	gpio_set_direction(LED_D, GPIO_MODE_OUTPUT);    		//Define pino como saida
+	
 	gpio_set_direction(RELE_N, GPIO_MODE_OUTPUT);  						//Define pino como saida
 	gpio_set_direction(RELE_L1, GPIO_MODE_OUTPUT);  					//Define pino como saida
 	gpio_set_direction(RELE_L2, GPIO_MODE_OUTPUT);    				//Define pino como saida
 	gpio_set_direction(RELE_L3, GPIO_MODE_OUTPUT);    				//Define pino como saida
+	
 	gpio_set_direction(BT_INICIAR_RECARGA, GPIO_MODE_INPUT);  //Define pino como entrada
 	gpio_set_direction(BT_ESTADO_F, GPIO_MODE_INPUT);  				//Define pino como entrada
 

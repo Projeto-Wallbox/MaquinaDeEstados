@@ -5,18 +5,18 @@
 extern gpio_num_t PINO_PILOTO;        			//Pino para leitura AD do Sinal VA
 extern gpio_num_t PINO_PROXIMIDADE;   			//Pino para leitura AD do do cabo conectado
 extern gpio_num_t PINO_PWM;           			//Pino no qual é gerado o sinal PWM
+
 extern gpio_num_t RELE_N;   					//Pino de saida, para acionar o Relé do Neutro (N)
 extern gpio_num_t RELE_L1;   					//Pino de saida, para acionar o Relé da fase 1 (L1)
 extern gpio_num_t RELE_L2;   					//Pino de saida, para acionar o Relé da fase 2 (L2)
 extern gpio_num_t RELE_L3;   					//Pino de saida, para acionar o Relé da fase 3 (L3)
 
+extern gpio_num_t BT_INICIAR_RECARGA;   		//Pino de entrada, para setar o inicio da recarga pela Estacao
 
-extern gpio_num_t LED_ESTADO_B;       			//Pino de saida, com led indicando veiculo conectado
-extern gpio_num_t LED_ESTADO_C;       			//Pino de saida, com led indicando veiculo fechou S2, em recarga (C2)
-extern gpio_num_t LED_ESTADO_ERRO;       		//Pino de saida, com led indicando erro
-extern gpio_num_t BT_INICIAR_RECARGA;   		//Pino de entrada, para setar o inicio da recarga pela Estacao 
-extern gpio_num_t BT_ESTADO_F;   		        //Pino de entrada, para setar o estado F 
-
+extern gpio_num_t LED_A;						//Led de EVSE ON/OF
+extern gpio_num_t LED_B;       					//Led de carregamento
+extern gpio_num_t LED_C;       					//Led de conexao a rede Wi-fi
+extern gpio_num_t LED_D;       				    //Led de erro ou falha
 
 //Definição da estrutura global
 struct GlobalStruct {

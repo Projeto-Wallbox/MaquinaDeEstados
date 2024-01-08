@@ -5,6 +5,7 @@
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
 #include "MaquinaDeEstados.h"
+
 GlobalStruct Dados; //Inicializa estrutura de dados (VER MELHOR FORMA)
 
 //Funcao que deve ser chamada na Interrupcao
@@ -67,6 +68,7 @@ int funcaoInterrupcao()
 			Dados.Corrente_Maxima = corrente_maxima;
 			Dados.Razao_Ciclica = razao_ciclica;
 			Dados.Media_Piloto = media_piloto;
+			Dados.Estado_Veiculo = estado_veiculo;
 
 			cont_atualiza = 0;
 		}
@@ -356,7 +358,7 @@ int chargingStationMain(int estado, int corrente_max)
 
 				k=0;
 				bloqueio_contatora=false;
-				//corrente_da_estacao=3; ////7777777777777777777777777777777777777
+				//corrente_da_estacao=0; 
 				//estadoDispositivoManobra=false;
 				//dispositivoDeManobra(estadoDispositivoManobra);
 			}
@@ -395,25 +397,30 @@ int chargingStationMain(int estado, int corrente_max)
 
 //Funcao para controle dos led indicadores ()
 void acendeLed(){
-	static bool ledEstadoC = false;
+	static bool ledB = false;
 	static bool ledEstadoErro = false;
 
-	//Veiculo conectado
-	if(Dados.Estado_Veiculo == 9 || Dados.Estado_Veiculo == 6){
-		gpio_set_level(LED_ESTADO_B, true);
-	}else{gpio_set_level(LED_ESTADO_B, false);}
+//LED A - Led EVSE on/off
+	gpio_set_level(LED_A, true);
 
-	//Se está carregando, pisca o led 
-	if(Dados.Estacao_Carregando == true && Dados.Razao_Ciclica<1000){
-		ledEstadoC = !ledEstadoC;
-		gpio_set_level(LED_ESTADO_C, ledEstadoC); 
-  }else{gpio_set_level(LED_ESTADO_C, false);}
-  
-	//Estado de Erro
+//LED B - Led de carregamento(veiculo conectado ou veiculo carregando) 
+		if(Dados.Estado_Veiculo==9 || Dados.Estado_Veiculo==6)
+		{
+			if(Dados.Estado_Veiculo==9 ||(Dados.Estado_Veiculo==6&& Dados.Estacao_Carregando == false))//Veiculo conectado
+			{
+				gpio_set_level(LED_B, true);
+			}
+			if(Dados.Estado_Veiculo == 6 && Dados.Estacao_Carregando == true)//Veiculo carregando
+			{
+				ledB = !ledB;
+				gpio_set_level(LED_B, ledB); 
+  		}
+		}else{gpio_set_level(LED_B, false);}
+
+//LED D - Led de erro ou falha
 	if(Dados.Estado_Veiculo == 0 || Dados.Estado_Veiculo == -12 ){
-		//ledEstadoErro = !ledEstadoErro;
-		gpio_set_level(LED_ESTADO_ERRO, true);
-	}else{gpio_set_level(LED_ESTADO_ERRO, false);}
+		gpio_set_level(LED_D, true);
+	}else{gpio_set_level(LED_D, false);}
 
 }
 
