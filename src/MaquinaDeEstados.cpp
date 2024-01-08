@@ -240,19 +240,19 @@ int defineEstado(int media_x1)
 			}
 			else
 			{
-				if((media_x1>700)&&(media_x1<1900))		//Entre +2 V e +4 V
+				if((media_x1>1500)&&(media_x1<1900))		//Entre +2 V e +4 V
 				{
 					estado=3;
 				}
 				else
 				{
-					if((media_x1>500)&&(media_x1<700))		//Entre -1 V e +1 V
+					if((media_x1>900)&&(media_x1<1500))		//Entre -1 V e +1 V
 					{
 						estado=0;
 					}
 					else
 					{
-						if(media_x1<200)												//Entre -1 V e -12 V
+						if(media_x1<900)												//Entre -1 V e -12 V
 						{
 							estado=-12;
 						}
@@ -297,16 +297,17 @@ int chargingStationMain(int estado, int corrente_max)
 		bloqueio_contatora=false;
 		k=0;
 		//cont = 0;
-		if(estado ==9 && iniciar_recarga== 1)		//Se Estado B ative o PWM
+		if(estado == 9 && iniciar_recarga== 1)		//Estado B2
 		{
 			corrente_da_estacao=corrente_max;
 		}
 		else
-		{
+		{// Estado B1
 			corrente_da_estacao=0;
 		}
 
-		if(estado ==9){cont = 0;}
+		if(estado==9){cont = 0;}
+		if(estado==12){Dados.Iniciar_Recarga = 0;}
 	}
 	//Lógica para os Estados C e D com cabo conectado
 	else
@@ -333,6 +334,7 @@ int chargingStationMain(int estado, int corrente_max)
 					}else{
 							estadoDispositivoManobra = 1;
 							dispositivoDeManobra(estadoDispositivoManobra);
+							corrente_da_estacao=0;
 							cont++;
 					}
 			//Lógica para transição do Estado C para o D com a contatora já fechada
@@ -351,14 +353,7 @@ int chargingStationMain(int estado, int corrente_max)
 			//Lógica para 6 segundos após a transição do Estado C para o D ou contatora aberta durante a transição
 			else
 			{
-				if(cont >= 6000){   //Minimo 6 segundos
-							estadoDispositivoManobra = 0;
-							dispositivoDeManobra(estadoDispositivoManobra);
-				}else{
-						estadoDispositivoManobra = 1;
-						dispositivoDeManobra(estadoDispositivoManobra);
-						corrente_da_estacao=2;   ////////////////////////////
-				}
+
 				k=0;
 				bloqueio_contatora=false;
 				//corrente_da_estacao=3; ////7777777777777777777777777777777777777
@@ -370,11 +365,6 @@ int chargingStationMain(int estado, int corrente_max)
 
 	//************Codificação da corrente máxima da estação através da razão cíclica do PWM***********************
 	//Lógica caso a estação não esteja pronta para fornecer energia
-	/*if(corrente_da_estacao==0 || iniciar_recarga == 0)
-	{
-		razao=1023;
-	}
-	*/
 	//Lógica do bloqueio da razão cíclica
 	if(bloqueio_razao_ciclica==true)
 	{
@@ -400,7 +390,6 @@ int chargingStationMain(int estado, int corrente_max)
 	if(estado_F == true){
 		razao = 0;
 	}
-
 	return razao;
 }
 
@@ -458,6 +447,7 @@ void dispositivoDeManobra(int acao){
 //Funcao auxiliar só para printar na tela (Temporária)
 void printTela(){
 	printf("Estado: %d\n", Dados.Estado_Veiculo);
+	printf("AD CP: %d\n", Dados.Media_Piloto);
 	printf("Cabo: %d\n", Dados.Corrente_Do_Cabo);
 	printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
 	printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
