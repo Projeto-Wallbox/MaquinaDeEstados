@@ -4,7 +4,7 @@
 #include "driver/gpio.h"
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
-#include "MaquinaDeEstados.h"
+#include "state_machine.h"
 
 GlobalStruct Dados; //Inicializa estrutura de dados (VER MELHOR FORMA)
 
@@ -285,7 +285,6 @@ int chargingStationMain(int estado, int corrente_max)
 	static bool bloqueio_razao_ciclica=false;		//Variável que bloqueia a alteração da razão cíclica por 5 segundos
 	static bool iniciar_recarga=false;					//Variável para autorizar o inicio de recarga
 
-	estado_F = gpio_get_level(GPIO_NUM_23);
 	iniciar_recarga = Dados.Iniciar_Recarga;
 	Dados.Contador = cont;
 	Dados.Estacao_Carregando = estadoDispositivoManobra;
