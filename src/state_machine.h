@@ -23,18 +23,30 @@ struct GlobalStruct {
     int Estado_Veiculo;        //Salva o estado do veiculo
     int Corrente_Do_Cabo;      //Salva a corrente do cabo
     int Corrente_Maxima;       //Salva a corrente máxima entre Cabo e corrente definida pelo usuário
-    int Corrente_Estacao;
+    int Corrente_Estacao;      //Corrente deifinida em chargingStation(pode ser 0 ou Corrente_Maxima) 
     int Razao_Ciclica;         //Salva a razao ciclica
-    bool Estacao_Carregando;   //Indica se a estacao está carregando ou nao
-    
+    int Ad_Proximidade;
+   
+    // variaveis a serem utilizadados para interagir com OCPP
+    bool mcAvailable;          // estacao disponivel
+    bool mcPreparing;          // veículo conectado
+    bool mcCharging;           // Em recarga
+    bool mcSuspendedEV;        // Recarga finalizada pelo EV
+    bool mcSuspendedEVSE;      // Recarga finalizada pela EVSE
+    bool mcFinishing;          
+    bool mcReserved;           
+    bool mcUnavailable;
+    bool mcFaulted;            // Foi detectado uma falha
+
     //Variaveis externas
-    int Corrente_Usuario;          //Valor de corrente definido pelo usuário
-    int Iniciar_Recarga;           //Se for 1, coloca a razao ciclica para o valor de corrente existente, caso contário razao em 100%
-    
+    int Corrente_Usuario;     //Valor de corrente definido pelo usuário
+    int Iniciar_Recarga;      //Se for 1, coloca a razao ciclica para o valor de corrente existente, caso contário razao em 100%
+
     //Variaveis externas só para printar na tela
     int Contador;
     int Bt_Estado;
     int Media_Piloto;
+    int newState;
 };
 
 //Declaração da variável global
@@ -49,5 +61,6 @@ void acendeLed();
 void leBotao();
 void dispositivoDeManobra(int acao);
 void printTela();
+void stateMachineControl(int state, int dutyCycle);
 
 #endif

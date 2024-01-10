@@ -35,8 +35,9 @@ int funcaoInterrupcao()
 	// a cada 166 us (6kHz)
 	medida_piloto = adc1_get_raw(ADC1_CHANNEL_4);	 // Leitura do piloto (1).																			
 	media_piloto = positivaPiloto(medida_piloto); // Calcula a média dos sinais (2)
-
 	Dados.Estado_Veiculo = estado_veiculo;  //atualiza estado na struct
+
+	stateMachineControl(estado_veiculo, razao_ciclica);
 
 	if (cont_principal >= 6) // a cada 1 ms (1kHz)
 	{
@@ -46,7 +47,7 @@ int funcaoInterrupcao()
 		}
 
 		cont_principal = 0;
-		medida_proximidade = adc1_get_raw(ADC1_CHANNEL_5);     // Faz a leitura analogica do proximidade (3)
+		medida_proximidade = adc1_get_raw(ADC1_CHANNEL_6);     // Faz a leitura analogica do proximidade (3)
 		cabo_conectado = correnteCabo(medida_proximidade);		 // Identificacao do Cabo (4)
 		estado_veiculo = defineEstado(media_piloto);           // Determina o Estado (5)
 	
@@ -68,6 +69,7 @@ int funcaoInterrupcao()
 			Dados.Corrente_Maxima = corrente_maxima;
 			Dados.Razao_Ciclica = razao_ciclica;
 			Dados.Media_Piloto = media_piloto;
+			Dados.Ad_Proximidade = medida_proximidade;
 			Dados.Estado_Veiculo = estado_veiculo;
 
 			cont_atualiza = 0;
@@ -274,7 +276,7 @@ int defineEstado(int media_x1)
 int chargingStationMain(int estado, int corrente_max)
 {	//Entra nessa lógica 1 vez a cada ciclo do PWM (1 kHz)
 	
-	static int razao=1000;											//Razão cíclica do PWM
+	static int razao=1023;											//Razão cíclica do PWM
 	static int k=0;															//Contador do bloqueio da contatora
 	static int m=0;												      //Contador do bloqueio da razão cíclica
 	static int corrente_da_estacao=0;			      //Corrente máxima que a estaçao irá fornecer
@@ -287,7 +289,7 @@ int chargingStationMain(int estado, int corrente_max)
 
 	iniciar_recarga = Dados.Iniciar_Recarga;
 	Dados.Contador = cont;
-	Dados.Estacao_Carregando = estadoDispositivoManobra;
+	Dados.mcCharging = estadoDispositivoManobra;
 	Dados.Corrente_Estacao = corrente_da_estacao; 
 //******Lógica que decide qual será a corrente máxima da estação e o estado da contatora*********************
 	//Lógica para os Estados: A, B, E e F ou cabo desconectado
@@ -391,7 +393,7 @@ int chargingStationMain(int estado, int corrente_max)
 	if(estado_F == true){
 		razao = 0;
 	}
-	return razao;
+	return 533;//razao;
 }
 
 //Funcao para controle dos led indicadores ()
@@ -405,11 +407,12 @@ void acendeLed(){
 //LED B - Led de carregamento(veiculo conectado ou veiculo carregando) 
 		if(Dados.Estado_Veiculo==9 || Dados.Estado_Veiculo==6)
 		{
-			if(Dados.Estado_Veiculo==9 ||(Dados.Estado_Veiculo==6&& Dados.Estacao_Carregando == false))//Veiculo conectado
+
+			if(Dados.Estado_Veiculo==9 ||(Dados.Estado_Veiculo==6&& Dados.mcCharging == false))//Veiculo conectado
 			{
 				gpio_set_level(LED_B, true);
 			}
-			if(Dados.Estado_Veiculo == 6 && Dados.Estacao_Carregando == true)//Veiculo carregando
+			if(Dados.Estado_Veiculo == 6 && Dados.mcCharging == true)//Veiculo carregando
 			{
 				ledB = !ledB;
 				gpio_set_level(LED_B, ledB); 
@@ -452,15 +455,42 @@ void dispositivoDeManobra(int acao){
 
 //Funcao auxiliar só para printar na tela (Temporária)
 void printTela(){
-	printf("Estado: %d\n", Dados.Estado_Veiculo);
-	printf("AD CP: %d\n", Dados.Media_Piloto);
-	printf("Cabo: %d\n", Dados.Corrente_Do_Cabo);
-	printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
-	printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
+	// printf("Estado: %d\n", Dados.Estado_Veiculo);
+	 printf("AD CP: %d\n", Dados.Media_Piloto);
+	 printf("Estado: %d\n\n", Dados.Estado_Veiculo);
+
+	// printf("AD PP: %d\n", Dados.Ad_Proximidade);
+	// printf("Cabo: %d\n\n", Dados.Corrente_Do_Cabo);
+	// printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
+	// printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
 	printf("Razao: %d\n\n", Dados.Razao_Ciclica);
 
-	printf("Corrente_estacao: %d\n", Dados.Corrente_Estacao);
+	// printf("Corrente_estacao: %d\n", Dados.Corrente_Estacao);
 	printf("Iniciar_Recarga: %d\n", Dados.Iniciar_Recarga);
-	printf("Carregando: %d\n", Dados.Estacao_Carregando);
-	printf("Contador: %d\n\n", Dados.Contador);
+	// printf("Carregando: %d\n", Dados.mcCharging);
+	// printf("Contador: %d\n\n", Dados.Contador);
+
+	// printf("Available: %d\n", Dados.mcAvailable);
+	// printf("Preparing: %d\n", Dados.mcPreparing);
+	// printf("Charging: %d\n\n", Dados.mcCharging);
+}
+
+void stateMachineControl(int state, int dutyCycle){
+	
+	// if(dutyCycle!=1023){
+	// 	if(dutyCycle==0 && Dados.mcFaulted == false){
+	// 		Dados.mcFaulted = true;
+	// 	}else{   //razão em 100%
+
+	// 		Dados.mcFaulted = false;
+	// 	}
+	// }
+	
+	// Verificar se o VE esta conectado
+	if((state==9 || state==6) && Dados.mcPreparing==false){
+		Dados.mcPreparing = true;
+	}else{Dados.mcPreparing = false;}
+
+	// 
+
 }
