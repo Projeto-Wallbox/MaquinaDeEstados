@@ -19,8 +19,8 @@
 #include "SparkFun_ACS37800_Arduino_Library.h"
 #include <Wire.h>
 
-ACS37800 wattmeter; // Create an object of the ACS37800 class
-// const int connectorId = 1;
+//ACS37800 wattmeter; // Create an object of the ACS37800 class
+//const int connectorId = 1;
 
 // DEFINIR PINOS--------------------------------------------------------------------------------------------------
 
@@ -72,12 +72,11 @@ void timer_callback(void *param)
 
 // ############### OCPP
 //const char *OCPP_BACKEND_URL = "ws://200.18.45.173:7589"; //servidor
-// const char *OCPP_BACKEND_URL = "ws://192.168.1.149:8089"; //pc henrique
+// const char *OCPP_BACKEND_URL = "ws://192.168.113.1:8089"; //pc henrique
 // const char *OCPP_CHARGE_BOX_ID = "IntrallWallbox";
 
-// const char *ssid = "LabAT";
-// const char *password = "inrilabat";
-
+// const char *ssid = "Galaxy_M51";
+// const char *password = "testeesp";
 
 // bool isEvConnected()
 // {
@@ -91,6 +90,7 @@ void timer_callback(void *param)
 
 void setup()
 {
+	//Serial.begin(115200);
 	// Wire.begin();
 
 	// Initialize sensor using default I2C address
@@ -104,7 +104,19 @@ void setup()
 
 	// wattmeter.setDividerRes(4000000);
 
-	DataStruct.currentSetByUser = 22; // Valor de corrente externo usuario/APP/OCPP
+
+    //Serial.print(F("[main] Wait for WiFi: "));
+
+    // WiFi.begin(ssid, password);
+		// if(WiFi.status() == WL_CONNECTED) Serial.print(F("Conected\n"));
+		  //   WiFi.begin(ssid, password);
+    // while (!WiFi.isConnected())
+    // {
+    //     Serial.print('.');
+    //     delay(1000);
+    //  }
+		// Serial.print(F("Connected.\n"));
+	DataStruct.currentSetByUser = 32; // Valor de corrente externo usuario/APP/OCPP
 	DataStruct.startChargingByUser = 0;	 // valor alterado para iniciar ou encerrar recarga usuario/APP/OCPP
 
 	gpio_set_direction(PWM_PIN, GPIO_MODE_OUTPUT);			 // Define pino como saida
@@ -149,18 +161,9 @@ void setup()
 	ESP_ERROR_CHECK(esp_timer_create(&my_timer_args, &timer_handler));
 	ESP_ERROR_CHECK(esp_timer_start_periodic(timer_handler, 167)); // 167 u,f= 6kHz P/ler 6 amostras de um ciclo PWM
 
-  //   Serial.begin(115200);
+    
 
-  //   Serial.print(F("[main] Wait for WiFi: "));
-
-  //   WiFi.begin(ssid, password);
-  //   while (!WiFi.isConnected())
-  //   {
-  //       Serial.print('.');
-  //       delay(1000);
-  //   }
-
-  //   Serial.println(F(" connected!"));
+    
 
 	// mocpp_initialize(OCPP_BACKEND_URL, OCPP_CHARGE_BOX_ID, "Intral Wallbox", "Intral");
 
@@ -173,17 +176,13 @@ void setup()
 	//       return 32.f; },
 	// 							  connectorId);
 
-	//xTaskCreate(wattmeterTask, "Wattmeter Task", 10000, NULL, 1, NULL);
+	// //xTaskCreate(wattmeterTask, "Wattmeter Task", 10000, NULL, 1, NULL);
+	// Serial.print(F("fim\n "));
 }
 
 
 void loop()
 {
-
-
-
-
-
 	// mocpp_loop();
 	// if (DataStruct.mcAvailable)
 	// {

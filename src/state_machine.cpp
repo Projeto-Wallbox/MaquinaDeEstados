@@ -37,7 +37,7 @@ int funcaoInterrupcao()
 	media_piloto = positivaPiloto(medida_piloto); // Calcula a média dos sinais (2)
 	DataStruct.vehicleState = estado_veiculo;  //atualiza estado na struct
 
-	stateMachineControl(estado_veiculo, razao_ciclica);
+	//stateMachineControl(estado_veiculo, razao_ciclica);
 
 	if (cont_principal >= 6) // a cada 1 ms (1kHz)
 	{
@@ -84,7 +84,6 @@ int funcaoInterrupcao()
 			}
 		}
 	}
-
 	return razao_ciclica;
 }
 
@@ -166,6 +165,7 @@ int positivaPiloto(int piloto)
 		}
 	}
 	return media_piloto;
+	
 }
 
 //Funcao que define o cabo conectado, de acordo com a Leitura AD Proximidade
@@ -226,43 +226,43 @@ int defineEstado(int media_x1)
 	
 	//Fórmula de cálcula: Exemplo estado C (+5 a +7 V), para 5 V temos: {[(5+12)/(24)]*4095}
 
-	if(media_x1>3900)				//Maior que +11 V
+	if(media_x1>4000)				//Maior que +11 V
 	{
 		estado=12;		
 	}
 	else
 	{
-		if((media_x1>1500)&&(media_x1<3900))		//Entre +8 V e +10 V
+		if((media_x1>3500)&&(media_x1<4000))		//Entre +8 V e +10 V
 		{
 		estado=9;
 		}
 		else
 		{
-			if((media_x1>1100)&&(media_x1<1450))		//Entre +5 V e +7 V
+			if((media_x1>2400)&&(media_x1<3400))		//Entre +5 V e +7 V
 			{
 				estado=6;
 			}
 			else
 			{
-				if((media_x1>700)&&(media_x1<1100))		//Entre +2 V e +4 V
+				if((media_x1>1200)&&(media_x1<1900))		//Entre +2 V e +4 V
 				{
 					estado=3;
 				}
 				else
 				{
-					if((media_x1>500)&&(media_x1<700))		//Entre -1 V e +1 V
+					if((media_x1>500)&&(media_x1<1100))		//Entre -1 V e +1 V
 					{
 						estado=0;
 					}
 					else
 					{
-						if(media_x1<100)												//Entre -1 V e -12 V
+						if(media_x1<300)												//Entre -1 V e -12 V
 						{
 							estado=-12;
 						}
 						else
 						{
-							estado=estado;													//Se está na faixa de nenhum estado, mantenha no estado anterior.
+							estado=estado;					//Se está na faixa de nenhum estado, mantenha no estado anterior.
 						}
 					}
 				}
@@ -456,17 +456,19 @@ void dispositivoDeManobra(int acao){
 //Funcao auxiliar só para printar na tela (Temporária)
 void printTela(){
 	// printf("Estado: %d\n", Dados.Estado_Veiculo);
-	 printf("AD CP: %d\n", DataStruct.Media_Piloto);
-	 printf("Estado: %d\n\n", DataStruct.vehicleState);
+	printf("AD CP: %d\n", DataStruct.Media_Piloto);
+	printf("Estado: %d\n", DataStruct.vehicleState);
 
-	printf("AD PP: %d\n", DataStruct.Ad_Proximidade);
+	//printf("AD PP: %d\n", DataStruct.Ad_Proximidade);
 	printf("Cabo: %d\n\n", DataStruct.cableCurrent);
 	// printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
 	// printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
+	
+	printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);
 	printf("Razao: %d\n\n", DataStruct.dutyCycle);
 
 	// printf("Corrente_estacao: %d\n", Dados.Corrente_Estacao);
-	printf("Iniciar_Recarga: %d\n\n", DataStruct.startChargingByUser);
+	
 	// printf("Carregando: %d\n", Dados.mcCharging);
 	// printf("Contador: %d\n\n", Dados.Contador);
 
