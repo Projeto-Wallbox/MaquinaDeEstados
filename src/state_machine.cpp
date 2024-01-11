@@ -459,14 +459,14 @@ void printTela(){
 	 printf("AD CP: %d\n", DataStruct.Media_Piloto);
 	 printf("Estado: %d\n\n", DataStruct.vehicleState);
 
-	// printf("AD PP: %d\n", Dados.Ad_Proximidade);
-	// printf("Cabo: %d\n\n", Dados.Corrente_Do_Cabo);
+	printf("AD PP: %d\n", DataStruct.Ad_Proximidade);
+	printf("Cabo: %d\n\n", DataStruct.cableCurrent);
 	// printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
 	// printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
 	printf("Razao: %d\n\n", DataStruct.dutyCycle);
 
 	// printf("Corrente_estacao: %d\n", Dados.Corrente_Estacao);
-	printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);
+	printf("Iniciar_Recarga: %d\n\n", DataStruct.startChargingByUser);
 	// printf("Carregando: %d\n", Dados.mcCharging);
 	// printf("Contador: %d\n\n", Dados.Contador);
 

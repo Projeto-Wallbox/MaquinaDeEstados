@@ -20,7 +20,7 @@
 #include <Wire.h>
 
 ACS37800 wattmeter; // Create an object of the ACS37800 class
-const int connectorId = 1;
+// const int connectorId = 1;
 
 // DEFINIR PINOS--------------------------------------------------------------------------------------------------
 
@@ -69,45 +69,25 @@ void timer_callback(void *param)
 	ESP_ERROR_CHECK(ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0));
 }
 
-//@TODO - colocar em outro arquivo
-// void get_wattmeter_data()
-// {
-// 	wattmeter.readRMS(&DataStruct.wVoltage, &DataStruct.wCurrent);
-// 	DataStruct.instaVoltage = DataStruct.wVoltage * 4.77; 
-// 	DataStruct.instaCurrent = DataStruct.wCurrent * 11;	   
-// 	DataStruct.powerApparent = DataStruct.instaVoltage * DataStruct.instaCurrent; 
-// 	DataStruct.energy += (DataStruct.powerApparent * 10) / (3600.0 * 1000.0);
-// }
 
-// void wattmeterTask(void *pvParameters) {
-//     while (1) {
-//         get_wattmeter_data(); 
-
-//         UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-//         Serial.print("Espaço livre mínimo da pilha: ");
-//         Serial.println(uxHighWaterMark);
-
-//         vTaskDelay(pdMS_TO_TICKS(10000)); // Espera por 10 segundos
-//     }
-// }
 // ############### OCPP
 //const char *OCPP_BACKEND_URL = "ws://200.18.45.173:7589"; //servidor
-const char *OCPP_BACKEND_URL = "ws://192.168.1.149:8089"; //pc henrique
-const char *OCPP_CHARGE_BOX_ID = "IntrallWallbox";
+// const char *OCPP_BACKEND_URL = "ws://192.168.1.149:8089"; //pc henrique
+// const char *OCPP_CHARGE_BOX_ID = "IntrallWallbox";
 
-const char *ssid = "LabAT";
-const char *password = "inrilabat";
+// const char *ssid = "LabAT";
+// const char *password = "inrilabat";
 
 
-bool isEvConnected()
-{
-    return true; 
-}
+// bool isEvConnected()
+// {
+//     return true; 
+// }
 
-bool isEvNotConnected()
-{
-    return false; 
-}
+// bool isEvNotConnected()
+// {
+//     return false; 
+// }
 
 void setup()
 {
@@ -169,29 +149,29 @@ void setup()
 	ESP_ERROR_CHECK(esp_timer_create(&my_timer_args, &timer_handler));
 	ESP_ERROR_CHECK(esp_timer_start_periodic(timer_handler, 167)); // 167 u,f= 6kHz P/ler 6 amostras de um ciclo PWM
 
-    Serial.begin(115200);
+  //   Serial.begin(115200);
 
-    Serial.print(F("[main] Wait for WiFi: "));
+  //   Serial.print(F("[main] Wait for WiFi: "));
 
-    WiFi.begin(ssid, password);
-    while (!WiFi.isConnected())
-    {
-        Serial.print('.');
-        delay(1000);
-    }
+  //   WiFi.begin(ssid, password);
+  //   while (!WiFi.isConnected())
+  //   {
+  //       Serial.print('.');
+  //       delay(1000);
+  //   }
 
-    Serial.println(F(" connected!"));
+  //   Serial.println(F(" connected!"));
 
-	mocpp_initialize(OCPP_BACKEND_URL, OCPP_CHARGE_BOX_ID, "Intral Wallbox", "Intral");
+	// mocpp_initialize(OCPP_BACKEND_URL, OCPP_CHARGE_BOX_ID, "Intral Wallbox", "Intral");
 
-	setEnergyMeterInput([]()
-						{ return 10.f; });
+	// setEnergyMeterInput([]()
+	// 					{ return 10.f; });
 
-	setSmartChargingCurrentOutput([](float limit)
-								  {
-	      Serial.printf("[main] Smart Charging allows maximum charge rate: %.0f A\n", limit);
-	      return 32.f; },
-								  connectorId);
+	// setSmartChargingCurrentOutput([](float limit)
+	// 							  {
+	//       Serial.printf("[main] Smart Charging allows maximum charge rate: %.0f A\n", limit);
+	//       return 32.f; },
+	// 							  connectorId);
 
 	//xTaskCreate(wattmeterTask, "Wattmeter Task", 10000, NULL, 1, NULL);
 }
@@ -199,24 +179,29 @@ void setup()
 
 void loop()
 {
-	mocpp_loop();
-	if (DataStruct.mcAvailable)
-	{
-		setConnectorPluggedInput(isEvNotConnected, connectorId);
-	}
 
-	if (DataStruct.mcPreparing)
-	{
-		setConnectorPluggedInput(isEvConnected, connectorId);
-	}
 
-	if (DataStruct.mcCharging)
-	{
-		startTransaction("12345");
-	}
 
-	if (DataStruct.mcFinishing)
-	{
-		stopTransaction();
-	}
+
+
+	// mocpp_loop();
+	// if (DataStruct.mcAvailable)
+	// {
+	// 	setConnectorPluggedInput(isEvNotConnected, connectorId);
+	// }
+
+	// if (DataStruct.mcPreparing)
+	// {
+	// 	setConnectorPluggedInput(isEvConnected, connectorId);
+	// }
+
+	// if (DataStruct.mcCharging)
+	// {
+	// 	startTransaction("12345");
+	// }
+
+	// if (DataStruct.mcFinishing)
+	// {
+	// 	stopTransaction();
+	// }
 }
