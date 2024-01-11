@@ -6,7 +6,7 @@
 #include "esp_adc_cal.h"
 #include "state_machine.h"
 
-GlobalStruct Dados; //Inicializa estrutura de dados (VER MELHOR FORMA)
+GlobalStruct DataStruct; //Inicializa estrutura de dados (VER MELHOR FORMA)
 
 //Funcao que deve ser chamada na Interrupcao
 int funcaoInterrupcao()
@@ -33,16 +33,16 @@ int funcaoInterrupcao()
 	cont_interfaceUsuario++;
 
 	// a cada 166 us (6kHz)
-	medida_piloto = adc1_get_raw(ADC1_CHANNEL_4);	 // Leitura do piloto (1).																			
+	medida_piloto = adc1_get_raw(ADC1_CHANNEL_0);	 // Leitura do piloto (1).																			
 	media_piloto = positivaPiloto(medida_piloto); // Calcula a média dos sinais (2)
-	Dados.Estado_Veiculo = estado_veiculo;  //atualiza estado na struct
+	DataStruct.vehicleState = estado_veiculo;  //atualiza estado na struct
 
 	stateMachineControl(estado_veiculo, razao_ciclica);
 
 	if (cont_principal >= 6) // a cada 1 ms (1kHz)
 	{
 		//TESTE DE LEITURA DO ESTADO E0
-	  if(Dados.Estado_Veiculo == 0){
+	  if(DataStruct.vehicleState == 0){
 			//printf("ACIONAR BATERIA");   /// em teste
 		}
 
@@ -51,8 +51,8 @@ int funcaoInterrupcao()
 		cabo_conectado = correnteCabo(medida_proximidade);		 // Identificacao do Cabo (4)
 		estado_veiculo = defineEstado(media_piloto);           // Determina o Estado (5)
 	
-		if(Dados.Corrente_Usuario < cabo_conectado && Dados.Corrente_Usuario<=32){ //logica de maior corrente suportada 
-			corrente_maxima = Dados.Corrente_Usuario;
+		if(DataStruct.currentSetByUser < cabo_conectado && DataStruct.currentSetByUser<=32){ //logica de maior corrente suportada 
+			corrente_maxima = DataStruct.currentSetByUser;
 		}else if(cabo_conectado<32){
 			corrente_maxima = cabo_conectado;
 			}else{corrente_maxima = 32;}
@@ -65,12 +65,12 @@ int funcaoInterrupcao()
 		{
 			//Atuzaliza os dados da estrura "maquinaDeEstados"
 			leBotao();
-			Dados.Corrente_Do_Cabo = cabo_conectado;
-			Dados.Corrente_Maxima = corrente_maxima;
-			Dados.Razao_Ciclica = razao_ciclica;
-			Dados.Media_Piloto = media_piloto;
-			Dados.Ad_Proximidade = medida_proximidade;
-			Dados.Estado_Veiculo = estado_veiculo;
+			DataStruct.cableCurrent = cabo_conectado;
+			DataStruct.maximumCurrent = corrente_maxima;
+			DataStruct.dutyCycle = razao_ciclica;
+			DataStruct.Media_Piloto = media_piloto;
+			DataStruct.Ad_Proximidade = medida_proximidade;
+			DataStruct.vehicleState = estado_veiculo;
 
 			cont_atualiza = 0;
 		}
@@ -79,7 +79,7 @@ int funcaoInterrupcao()
 			if (cont_interfaceUsuario >= 6000) // a cada 1000 ms (1 Hz)
 			{ 
 				acendeLed();
-				printTela();
+				//printTela();
 				cont_interfaceUsuario = 0;
 			}
 		}
@@ -232,31 +232,31 @@ int defineEstado(int media_x1)
 	}
 	else
 	{
-		if((media_x1>2500)&&(media_x1<3900))		//Entre +8 V e +10 V
+		if((media_x1>1500)&&(media_x1<3900))		//Entre +8 V e +10 V
 		{
 		estado=9;
 		}
 		else
 		{
-			if((media_x1>1900)&&(media_x1<2400))		//Entre +5 V e +7 V
+			if((media_x1>1100)&&(media_x1<1450))		//Entre +5 V e +7 V
 			{
 				estado=6;
 			}
 			else
 			{
-				if((media_x1>1500)&&(media_x1<1900))		//Entre +2 V e +4 V
+				if((media_x1>700)&&(media_x1<1100))		//Entre +2 V e +4 V
 				{
 					estado=3;
 				}
 				else
 				{
-					if((media_x1>900)&&(media_x1<1500))		//Entre -1 V e +1 V
+					if((media_x1>500)&&(media_x1<700))		//Entre -1 V e +1 V
 					{
 						estado=0;
 					}
 					else
 					{
-						if(media_x1<900)												//Entre -1 V e -12 V
+						if(media_x1<100)												//Entre -1 V e -12 V
 						{
 							estado=-12;
 						}
@@ -287,10 +287,10 @@ int chargingStationMain(int estado, int corrente_max)
 	static bool bloqueio_razao_ciclica=false;		//Variável que bloqueia a alteração da razão cíclica por 5 segundos
 	static bool iniciar_recarga=false;					//Variável para autorizar o inicio de recarga
 
-	iniciar_recarga = Dados.Iniciar_Recarga;
-	Dados.Contador = cont;
-	Dados.mcCharging = estadoDispositivoManobra;
-	Dados.Corrente_Estacao = corrente_da_estacao; 
+	iniciar_recarga = DataStruct.startChargingByUser;
+	DataStruct.Contador = cont;
+	DataStruct.mcCharging = estadoDispositivoManobra;
+	DataStruct.stationCurrent = corrente_da_estacao; 
 //******Lógica que decide qual será a corrente máxima da estação e o estado da contatora*********************
 	//Lógica para os Estados: A, B, E e F ou cabo desconectado
 	if((estado==12)||(estado==9)||(estado==0)||(estado==-12)||(corrente_max==0))			
@@ -310,7 +310,7 @@ int chargingStationMain(int estado, int corrente_max)
 		}
 
 		if(estado==9){cont = 0;}
-		if(estado==12){Dados.Iniciar_Recarga = 0;}
+		if(estado==12){DataStruct.startChargingByUser = 0;}
 	}
 	//Lógica para os Estados C e D com cabo conectado
 	else
@@ -405,14 +405,14 @@ void acendeLed(){
 	gpio_set_level(LED_A, true);
 
 //LED B - Led de carregamento(veiculo conectado ou veiculo carregando) 
-		if(Dados.Estado_Veiculo==9 || Dados.Estado_Veiculo==6)
+		if(DataStruct.vehicleState==9 || DataStruct.vehicleState==6)
 		{
 
-			if(Dados.Estado_Veiculo==9 ||(Dados.Estado_Veiculo==6&& Dados.mcCharging == false))//Veiculo conectado
+			if(DataStruct.vehicleState==9 ||(DataStruct.vehicleState==6&& DataStruct.mcCharging == false))//Veiculo conectado
 			{
 				gpio_set_level(LED_B, true);
 			}
-			if(Dados.Estado_Veiculo == 6 && Dados.mcCharging == true)//Veiculo carregando
+			if(DataStruct.vehicleState == 6 && DataStruct.mcCharging == true)//Veiculo carregando
 			{
 				ledB = !ledB;
 				gpio_set_level(LED_B, ledB); 
@@ -420,7 +420,7 @@ void acendeLed(){
 		}else{gpio_set_level(LED_B, false);}
 
 //LED D - Led de erro ou falha
-	if(Dados.Estado_Veiculo == 0 || Dados.Estado_Veiculo == -12 ){
+	if(DataStruct.vehicleState == 0 || DataStruct.vehicleState == -12 ){
 		gpio_set_level(LED_D, true);
 	}else{gpio_set_level(LED_D, false);}
 
@@ -429,18 +429,18 @@ void acendeLed(){
 //Funcao para controle do incio/fim de recarga pelo botao físico
 void leBotao(){ 
 		static int cont = 0;
-    int bt_estado = gpio_get_level(BT_INICIAR_RECARGA);
+    int bt_estado = gpio_get_level(START_RECHARGER_BT);
      
     if (bt_estado == 1) {
         cont++;
     } else {cont = 0;}
 
     if (cont >= 1 && cont <= 5) {
-        Dados.Iniciar_Recarga = 1;
+        DataStruct.startChargingByUser = 1;
     }
 
     if (cont >= 30) {
-        Dados.Iniciar_Recarga = 0;
+        DataStruct.startChargingByUser = 0;
     }
 }
 
@@ -456,17 +456,17 @@ void dispositivoDeManobra(int acao){
 //Funcao auxiliar só para printar na tela (Temporária)
 void printTela(){
 	// printf("Estado: %d\n", Dados.Estado_Veiculo);
-	 printf("AD CP: %d\n", Dados.Media_Piloto);
-	 printf("Estado: %d\n\n", Dados.Estado_Veiculo);
+	 printf("AD CP: %d\n", DataStruct.Media_Piloto);
+	 printf("Estado: %d\n\n", DataStruct.vehicleState);
 
 	// printf("AD PP: %d\n", Dados.Ad_Proximidade);
 	// printf("Cabo: %d\n\n", Dados.Corrente_Do_Cabo);
 	// printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
 	// printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
-	printf("Razao: %d\n\n", Dados.Razao_Ciclica);
+	printf("Razao: %d\n\n", DataStruct.dutyCycle);
 
 	// printf("Corrente_estacao: %d\n", Dados.Corrente_Estacao);
-	printf("Iniciar_Recarga: %d\n", Dados.Iniciar_Recarga);
+	printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);
 	// printf("Carregando: %d\n", Dados.mcCharging);
 	// printf("Contador: %d\n\n", Dados.Contador);
 
@@ -478,39 +478,39 @@ void printTela(){
 void stateMachineControl(int state, int dutyCycle){
 	
 	if(dutyCycle!=1023){
-		if(dutyCycle==0 && Dados.mcFaulted == false){
-			Dados.mcFaulted = true;
+		if(dutyCycle==0 && DataStruct.mcFaulted == false){
+			DataStruct.mcFaulted = true;
 		}else{   //razão em 100%
 
-			Dados.mcFaulted = false;
+			DataStruct.mcFaulted = false;
 		}
 	}
 
-	if(state == 12 && dutyCycle == 1023 && Dados.mcAvailable == false){
-		Dados.mcAvailable = true;
-		Dados.historyState = 12;
-		Dados.mcPreparing=false;
-		Dados.mcFinishing=false;
+	if(state == 12 && dutyCycle == 1023 && DataStruct.mcAvailable == false){
+		DataStruct.mcAvailable = true;
+		DataStruct.historyState = 12;
+		DataStruct.mcPreparing=false;
+		DataStruct.mcFinishing=false;
 	}
 	else{
-		Dados.mcAvailable = false;
+		DataStruct.mcAvailable = false;
 	}
 	// colocar o historico do disponivel para o preparando estado 12 -> 9 dai e preparando
 	// Verificar se o VE esta conectado
-	if((state==9) && Dados.mcPreparing==false && Dados.mcFinishing==false){
-		Dados.historyState == 12 ? Dados.mcPreparing=true : Dados.mcPreparing=false;
-		Dados.historyState == 6 ? Dados.mcFinishing=true : Dados.mcFinishing=false;
+	if((state==9) && DataStruct.mcPreparing==false && DataStruct.mcFinishing==false){
+		DataStruct.historyState == 12 ? DataStruct.mcPreparing=true : DataStruct.mcPreparing=false;
+		DataStruct.historyState == 6 ? DataStruct.mcFinishing=true : DataStruct.mcFinishing=false;
 	}
 
 
-	if(state == 6 && dutyCycle!=1023 && Dados.mcCharging == false){
-		Dados.mcCharging = true;
-		Dados.historyState = 6;
-		Dados.mcPreparing=false;
-		Dados.mcFinishing=false;
+	if(state == 6 && dutyCycle!=1023 && DataStruct.mcCharging == false){
+		DataStruct.mcCharging = true;
+		DataStruct.historyState = 6;
+		DataStruct.mcPreparing=false;
+		DataStruct.mcFinishing=false;
 	}
 	else{
-		Dados.mcCharging = false;
+		DataStruct.mcCharging = false;
 	}
 
 }
