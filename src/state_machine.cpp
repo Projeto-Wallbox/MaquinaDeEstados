@@ -477,20 +477,40 @@ void printTela(){
 
 void stateMachineControl(int state, int dutyCycle){
 	
-	// if(dutyCycle!=1023){
-	// 	if(dutyCycle==0 && Dados.mcFaulted == false){
-	// 		Dados.mcFaulted = true;
-	// 	}else{   //razão em 100%
+	if(dutyCycle!=1023){
+		if(dutyCycle==0 && Dados.mcFaulted == false){
+			Dados.mcFaulted = true;
+		}else{   //razão em 100%
 
-	// 		Dados.mcFaulted = false;
-	// 	}
-	// }
-	
+			Dados.mcFaulted = false;
+		}
+	}
+
+	if(state == 12 && dutyCycle == 1023 && Dados.mcAvailable == false){
+		Dados.mcAvailable = true;
+		Dados.historyState = 12;
+		Dados.mcPreparing=false;
+		Dados.mcFinishing=false;
+	}
+	else{
+		Dados.mcAvailable = false;
+	}
+	// colocar o historico do disponivel para o preparando estado 12 -> 9 dai e preparando
 	// Verificar se o VE esta conectado
-	if((state==9 || state==6) && Dados.mcPreparing==false){
-		Dados.mcPreparing = true;
-	}else{Dados.mcPreparing = false;}
+	if((state==9) && Dados.mcPreparing==false && Dados.mcFinishing==false){
+		Dados.historyState == 12 ? Dados.mcPreparing=true : Dados.mcPreparing=false;
+		Dados.historyState == 6 ? Dados.mcFinishing=true : Dados.mcFinishing=false;
+	}
 
-	// 
+
+	if(state == 6 && dutyCycle!=1023 && Dados.mcCharging == false){
+		Dados.mcCharging = true;
+		Dados.historyState = 6;
+		Dados.mcPreparing=false;
+		Dados.mcFinishing=false;
+	}
+	else{
+		Dados.mcCharging = false;
+	}
 
 }
