@@ -70,28 +70,29 @@ void timer_callback(void *param)
 }
 
 //@TODO - colocar em outro arquivo
-void get_wattmeter_data()
-{
-	wattmeter.readRMS(&DataStruct.wVoltage, &DataStruct.wCurrent);
-	DataStruct.instaVoltage = DataStruct.wVoltage * 4.77; 
-	DataStruct.instaCurrent = DataStruct.wCurrent * 11;	   
-	DataStruct.powerApparent = DataStruct.instaVoltage * DataStruct.instaCurrent; 
-	DataStruct.energy += (DataStruct.powerApparent * 10) / (3600.0 * 1000.0);
-}
+// void get_wattmeter_data()
+// {
+// 	wattmeter.readRMS(&DataStruct.wVoltage, &DataStruct.wCurrent);
+// 	DataStruct.instaVoltage = DataStruct.wVoltage * 4.77; 
+// 	DataStruct.instaCurrent = DataStruct.wCurrent * 11;	   
+// 	DataStruct.powerApparent = DataStruct.instaVoltage * DataStruct.instaCurrent; 
+// 	DataStruct.energy += (DataStruct.powerApparent * 10) / (3600.0 * 1000.0);
+// }
 
-void wattmeterTask(void *pvParameters) {
-    while (1) {
-        get_wattmeter_data(); 
+// void wattmeterTask(void *pvParameters) {
+//     while (1) {
+//         get_wattmeter_data(); 
 
-        UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-        Serial.print("Espaço livre mínimo da pilha: ");
-        Serial.println(uxHighWaterMark);
+//         UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+//         Serial.print("Espaço livre mínimo da pilha: ");
+//         Serial.println(uxHighWaterMark);
 
-        vTaskDelay(pdMS_TO_TICKS(10000)); // Espera por 10 segundos
-    }
-}
+//         vTaskDelay(pdMS_TO_TICKS(10000)); // Espera por 10 segundos
+//     }
+// }
 // ############### OCPP
-const char *OCPP_BACKEND_URL = "ws://200.18.45.173:7589";
+//const char *OCPP_BACKEND_URL = "ws://200.18.45.173:7589"; //servidor
+const char *OCPP_BACKEND_URL = "ws://192.168.1.149:8089"; //pc henrique
 const char *OCPP_CHARGE_BOX_ID = "IntrallWallbox";
 
 const char *ssid = "LabAT";
@@ -110,18 +111,18 @@ bool isEvNotConnected()
 
 void setup()
 {
-	Wire.begin();
+	// Wire.begin();
 
 	// Initialize sensor using default I2C address
-	if (wattmeter.begin(0x60) == false)
-	{
-		Serial.print(F("ACS37800 not detected. Check connections and I2C address. Freezing..."));
-	}
+	// if (wattmeter.begin(0x60) == false)
+	// {
+	// 	Serial.print(F("ACS37800 not detected. Check connections and I2C address. Freezing..."));
+	// }
 
-	wattmeter.setBypassNenable(true, true);
-	wattmeter.setNumberOfSamples(1023, true);
+	// wattmeter.setBypassNenable(true, true);
+	// wattmeter.setNumberOfSamples(1023, true);
 
-	wattmeter.setDividerRes(4000000);
+	// wattmeter.setDividerRes(4000000);
 
 	DataStruct.currentSetByUser = 22; // Valor de corrente externo usuario/APP/OCPP
 	DataStruct.startChargingByUser = 0;	 // valor alterado para iniciar ou encerrar recarga usuario/APP/OCPP
@@ -168,14 +169,18 @@ void setup()
 	ESP_ERROR_CHECK(esp_timer_create(&my_timer_args, &timer_handler));
 	ESP_ERROR_CHECK(esp_timer_start_periodic(timer_handler, 167)); // 167 u,f= 6kHz P/ler 6 amostras de um ciclo PWM
 
-	Serial.begin(115200);
-	Serial.print(F("[main] Wait for WiFi: "));
-	WiFi.begin(ssid, password);
-	while (!WiFi.isConnected())
-	{
-		Serial.print('.');
-		delay(1000);
-	}
+    Serial.begin(115200);
+
+    Serial.print(F("[main] Wait for WiFi: "));
+
+    WiFi.begin(ssid, password);
+    while (!WiFi.isConnected())
+    {
+        Serial.print('.');
+        delay(1000);
+    }
+
+    Serial.println(F(" connected!"));
 
 	mocpp_initialize(OCPP_BACKEND_URL, OCPP_CHARGE_BOX_ID, "Intral Wallbox", "Intral");
 
@@ -188,7 +193,7 @@ void setup()
 	      return 32.f; },
 								  connectorId);
 
-	xTaskCreate(wattmeterTask, "Wattmeter Task", 10000, NULL, 1, NULL);
+	//xTaskCreate(wattmeterTask, "Wattmeter Task", 10000, NULL, 1, NULL);
 }
 
 

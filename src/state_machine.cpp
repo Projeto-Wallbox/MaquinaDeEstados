@@ -79,7 +79,7 @@ int funcaoInterrupcao()
 			if (cont_interfaceUsuario >= 6000) // a cada 1000 ms (1 Hz)
 			{ 
 				acendeLed();
-				//printTela();
+				printTela();
 				cont_interfaceUsuario = 0;
 			}
 		}
@@ -393,7 +393,7 @@ int chargingStationMain(int estado, int corrente_max)
 	if(estado_F == true){
 		razao = 0;
 	}
-	return 533;//razao;
+	return razao;
 }
 
 //Funcao para controle dos led indicadores ()
@@ -447,9 +447,9 @@ void leBotao(){
 //Funcao para controle do dispositivo de manobra(relés)
 void dispositivoDeManobra(int acao){
 	if(acao == 1){
-		gpio_set_level(RELE_N, true); // Desliga Dispositivo de manobra
+		gpio_set_level(RELE_L1, true); // Desliga Dispositivo de manobra
 	}else{
-		gpio_set_level(RELE_N, false); // Desliga Dispositivo de manobra
+		gpio_set_level(RELE_L1, false); // Desliga Dispositivo de manobra
 	}
 }
 
