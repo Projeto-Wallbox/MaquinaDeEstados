@@ -161,10 +161,6 @@ void setup()
 	ESP_ERROR_CHECK(esp_timer_create(&my_timer_args, &timer_handler));
 	ESP_ERROR_CHECK(esp_timer_start_periodic(timer_handler, 167)); // 167 u,f= 6kHz P/ler 6 amostras de um ciclo PWM
 
-    
-
-    
-
 	// mocpp_initialize(OCPP_BACKEND_URL, OCPP_CHARGE_BOX_ID, "Intral Wallbox", "Intral");
 
 	// setEnergyMeterInput([]()

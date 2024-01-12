@@ -37,7 +37,7 @@ int funcaoInterrupcao()
 	media_piloto = positivaPiloto(medida_piloto); // Calcula a média dos sinais (2)
 	DataStruct.vehicleState = estado_veiculo;  //atualiza estado na struct
 
-	//stateMachineControl(estado_veiculo, razao_ciclica);
+	stateMachineControl(estado_veiculo, razao_ciclica);
 
 	if (cont_principal >= 6) // a cada 1 ms (1kHz)
 	{
@@ -226,37 +226,37 @@ int defineEstado(int media_x1)
 	
 	//Fórmula de cálcula: Exemplo estado C (+5 a +7 V), para 5 V temos: {[(5+12)/(24)]*4095}
 
-	if(media_x1>4000)				//Maior que +11 V
+	if(media_x1>3470)				//Maior que +11 V
 	{
 		estado=12;		
 	}
 	else
 	{
-		if((media_x1>3500)&&(media_x1<4000))		//Entre +8 V e +10 V
+		if((media_x1>3017)&&(media_x1<3319))		//Entre +8 V e +10 V
 		{
 		estado=9;
 		}
 		else
 		{
-			if((media_x1>2400)&&(media_x1<3400))		//Entre +5 V e +7 V
+			if((media_x1>2556)&&(media_x1<2867))		//Entre +5 V e +7 V
 			{
 				estado=6;
 			}
 			else
 			{
-				if((media_x1>1200)&&(media_x1<1900))		//Entre +2 V e +4 V
+				if((media_x1>2112)&&(media_x1<2414))		//Entre +2 V e +4 V
 				{
 					estado=3;
 				}
 				else
 				{
-					if((media_x1>500)&&(media_x1<1100))		//Entre -1 V e +1 V
+					if((media_x1>1660)&&(media_x1<1961))		//Entre -1 V e +1 V
 					{
 						estado=0;
 					}
 					else
 					{
-						if(media_x1<300)												//Entre -1 V e -12 V
+						if(media_x1<1600)												//Entre -1 V e -12 V
 						{
 							estado=-12;
 						}
@@ -393,7 +393,7 @@ int chargingStationMain(int estado, int corrente_max)
 	if(estado_F == true){
 		razao = 0;
 	}
-	return razao;
+	return 1023;//razao;
 }
 
 //Funcao para controle dos led indicadores ()
