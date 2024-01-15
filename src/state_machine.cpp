@@ -33,7 +33,7 @@ int funcaoInterrupcao()
 	cont_interfaceUsuario++;
 
 	// a cada 166 us (6kHz)
-	medida_piloto = adc1_get_raw(ADC1_CHANNEL_3);	 // Leitura do piloto (1).																			
+	medida_piloto = adc1_get_raw(ADC1_CHANNEL_7);	 // Leitura do piloto (1).																			
 	media_piloto = positivaPiloto(medida_piloto); // Calcula a média dos sinais (2)
 	DataStruct.vehicleState = estado_veiculo;  //atualiza estado na struct
 
@@ -226,37 +226,37 @@ int defineEstado(int media_x1)
 	
 	//Fórmula de cálcula: Exemplo estado C (+5 a +7 V), para 5 V temos: {[(5+12)/(24)]*4095}
 
-	if(media_x1>3800)				//Maior que +11 V
+	if(media_x1>3924)				//Maior que +11 V
 	{
 		estado=12;		
 	}
 	else
 	{
-		if((media_x1>3200)&&(media_x1<3700))		//Entre +8 V e +10 V
+		if((media_x1>3412)&&(media_x1<3753))		//Entre +8 V e +10 V
 		{
 		estado=9;
 		}
 		else
 		{
-			if((media_x1>2720)&&(media_x1<3040))		//Entre +5 V e +7 V
+			if((media_x1>2900)&&(media_x1<3241))		//Entre +5 V e +7 V
 			{
 				estado=6;
 			}
 			else
 			{
-				if((media_x1>2240)&&(media_x1<2600))		//Entre +2 V e +4 V
+				if((media_x1>2389)&&(media_x1<2730))		//Entre +2 V e +4 V
 				{
 					estado=3;
 				}
 				else
 				{
-					if((media_x1>1760)&&(media_x1<2080))		//Entre -1 V e +1 V
+					if((media_x1>1877)&&(media_x1<2219))		//Entre -1 V e +1 V
 					{
 						estado=0;
 					}
 					else
 					{
-						if(media_x1<1700)												//Entre -1 V e -12 V
+						if(media_x1<1800)												//Entre -1 V e -12 V
 						{
 							estado=-12;
 						}
@@ -449,8 +449,10 @@ void leBotao(){
 void dispositivoDeManobra(int acao){
 	if(acao == 1){
 		gpio_set_level(RELE_L1, true); // Desliga Dispositivo de manobra
+		gpio_set_level(RELE_L2, true); // Desliga Dispositivo de manobra
 	}else{
 		gpio_set_level(RELE_L1, false); // Desliga Dispositivo de manobra
+		gpio_set_level(RELE_L2, false); // Desliga Dispositivo de manobra
 	}
 }
 

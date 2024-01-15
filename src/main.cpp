@@ -41,14 +41,14 @@ gpio_num_t BT_INICIAR_RECARGA = GPIO_NUM_14; // Pino de entrada, para setar o in
 #endif
 
 #ifdef ESP32_S3
-gpio_num_t PILOT_PIN = GPIO_NUM_4;
+gpio_num_t PILOT_PIN = GPIO_NUM_8;
 gpio_num_t PINO_PROXIMIDADE = GPIO_NUM_7;
 gpio_num_t PWM_PIN = GPIO_NUM_6;
 
 gpio_num_t RELE_L1 = GPIO_NUM_11;     //Seria GPIO11 na PCB
-gpio_num_t RELE_L2 = GPIO_NUM_38;     //Seria GPIO12 na PCB
-gpio_num_t RELE_L3 = GPIO_NUM_46;     //Seria GPIO13 na PCB
-gpio_num_t RELE_N = GPIO_NUM_2;       //Seria GPIO14 na PCB
+gpio_num_t RELE_L2 = GPIO_NUM_12;     //Seria GPIO12 na PCB
+gpio_num_t RELE_L3 = GPIO_NUM_13;     //Seria GPIO13 na PCB
+gpio_num_t RELE_N = GPIO_NUM_14;       //Seria GPIO14 na PCB
 
 gpio_num_t LED_A = GPIO_NUM_1;	// Estamos usando o led on do ESP para mostrar que a estacao ligada
 gpio_num_t LED_B = GPIO_NUM_10;	// O LEDB(Estado 9), piscando (Carregando) 
@@ -137,8 +137,8 @@ void setup()
 	// CONFIGURA OS CANAIS ADC ---------------------------------------------------------------------------
 	esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_12Bit, 0, &adc_chars);
 	adc1_config_width(ADC_WIDTH_12Bit);
-	adc1_config_channel_atten(ADC1_CHANNEL_3, ADC_ATTEN_DB_11);
-	adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);
+	adc1_config_channel_atten(ADC1_CHANNEL_7, ADC_ATTEN_DB_11);  // AD CP
+	adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);  // AD PP
 
 	// CONFIGURA NEW PWM
 	ledc_timer_config_t ledc_timer = {
