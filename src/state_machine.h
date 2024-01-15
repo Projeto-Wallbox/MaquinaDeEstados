@@ -26,7 +26,7 @@ struct GlobalStruct
     int maximumCurrent;  // Salva a corrente máxima entre Cabo e corrente definida pelo usuário
     int stationCurrent; // Corrente deifinida em chargingStation(pode ser 0 ou Corrente_Maxima)
     int dutyCycle;    // Salva a razao ciclica
-    int Ad_Proximidade;
+      
 
     // variaveis a serem utilizadados para interagir com OCPP
     bool mcAvailable; // estacao disponivel
@@ -47,9 +47,11 @@ struct GlobalStruct
     int startChargingByUser;  // Se for 1, coloca a razao ciclica para o valor de corrente existente, caso contário razao em 100%
 
     // Variaveis externas só para printar na tela
-    int Contador;
-    int Bt_Estado;
+    int Contador_C;  // salva valor utilizado para transicao 10.2
+    int Contador_BT;  //Botao pressionado 
+    int Ad_Proximidade; //Valor da leitura AD PP
     int Media_Piloto;
+    int Bt_Estado;
     int newState;
 
     // Variaveis para leitura do Wattimetro

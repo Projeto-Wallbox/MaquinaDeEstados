@@ -41,17 +41,19 @@ gpio_num_t BT_INICIAR_RECARGA = GPIO_NUM_14; // Pino de entrada, para setar o in
 #endif
 
 #ifdef ESP32_S3
-gpio_num_t PILOT_PIN = GPIO_NUM_1;
+gpio_num_t PILOT_PIN = GPIO_NUM_4;
 gpio_num_t PINO_PROXIMIDADE = GPIO_NUM_7;
 gpio_num_t PWM_PIN = GPIO_NUM_6;
-gpio_num_t RELE_L1 = GPIO_NUM_11;
-gpio_num_t RELE_L2 = GPIO_NUM_12;
-gpio_num_t RELE_L3 = GPIO_NUM_46;
-gpio_num_t RELE_N = GPIO_NUM_14;
-gpio_num_t LED_A = GPIO_NUM_1;	// over_voltage
-gpio_num_t LED_B = GPIO_NUM_2;	// under_voltage
-gpio_num_t LED_C = GPIO_NUM_3;	// over_current
-gpio_num_t LED_D = GPIO_NUM_10; // fault_out
+
+gpio_num_t RELE_L1 = GPIO_NUM_11;     //Seria GPIO11 na PCB
+gpio_num_t RELE_L2 = GPIO_NUM_38;     //Seria GPIO12 na PCB
+gpio_num_t RELE_L3 = GPIO_NUM_46;     //Seria GPIO13 na PCB
+gpio_num_t RELE_N = GPIO_NUM_2;       //Seria GPIO14 na PCB
+
+gpio_num_t LED_A = GPIO_NUM_1;	// Estamos usando o led on do ESP para mostrar que a estacao ligada
+gpio_num_t LED_B = GPIO_NUM_10;	// O LEDB(Estado 9), piscando (Carregando) 
+gpio_num_t LED_C = GPIO_NUM_2;	
+gpio_num_t LED_D = GPIO_NUM_18; 
 gpio_num_t START_RECHARGER_BT = GPIO_NUM_9;
 #define SPEED_MODE_TIMER LEDC_LOW_SPEED_MODE // LEDC_LOW_MODE_MAX
 #endif
@@ -120,6 +122,8 @@ void setup()
 	DataStruct.startChargingByUser = 0;	 // valor alterado para iniciar ou encerrar recarga usuario/APP/OCPP
 
 	gpio_set_direction(PWM_PIN, GPIO_MODE_OUTPUT);			 // Define pino como saida
+	gpio_set_direction(PILOT_PIN, GPIO_MODE_INPUT);		
+	gpio_set_direction(PINO_PROXIMIDADE, GPIO_MODE_INPUT);
 	gpio_set_direction(LED_A, GPIO_MODE_OUTPUT);			 // Define pino como saida
 	gpio_set_direction(LED_B, GPIO_MODE_OUTPUT);			 // Define pino como saida
 	gpio_set_direction(LED_C, GPIO_MODE_OUTPUT);			 // Define pino como saida
@@ -133,7 +137,7 @@ void setup()
 	// CONFIGURA OS CANAIS ADC ---------------------------------------------------------------------------
 	esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_12Bit, 0, &adc_chars);
 	adc1_config_width(ADC_WIDTH_12Bit);
-	adc1_config_channel_atten(ADC1_CHANNEL_0, ADC_ATTEN_DB_11);
+	adc1_config_channel_atten(ADC1_CHANNEL_3, ADC_ATTEN_DB_11);
 	adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);
 
 	// CONFIGURA NEW PWM

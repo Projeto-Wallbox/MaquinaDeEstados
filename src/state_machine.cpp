@@ -33,7 +33,7 @@ int funcaoInterrupcao()
 	cont_interfaceUsuario++;
 
 	// a cada 166 us (6kHz)
-	medida_piloto = adc1_get_raw(ADC1_CHANNEL_0);	 // Leitura do piloto (1).																			
+	medida_piloto = adc1_get_raw(ADC1_CHANNEL_3);	 // Leitura do piloto (1).																			
 	media_piloto = positivaPiloto(medida_piloto); // Calcula a média dos sinais (2)
 	DataStruct.vehicleState = estado_veiculo;  //atualiza estado na struct
 
@@ -226,37 +226,37 @@ int defineEstado(int media_x1)
 	
 	//Fórmula de cálcula: Exemplo estado C (+5 a +7 V), para 5 V temos: {[(5+12)/(24)]*4095}
 
-	if(media_x1>3470)				//Maior que +11 V
+	if(media_x1>3800)				//Maior que +11 V
 	{
 		estado=12;		
 	}
 	else
 	{
-		if((media_x1>3017)&&(media_x1<3319))		//Entre +8 V e +10 V
+		if((media_x1>3200)&&(media_x1<3700))		//Entre +8 V e +10 V
 		{
 		estado=9;
 		}
 		else
 		{
-			if((media_x1>2556)&&(media_x1<2867))		//Entre +5 V e +7 V
+			if((media_x1>2720)&&(media_x1<3040))		//Entre +5 V e +7 V
 			{
 				estado=6;
 			}
 			else
 			{
-				if((media_x1>2112)&&(media_x1<2414))		//Entre +2 V e +4 V
+				if((media_x1>2240)&&(media_x1<2600))		//Entre +2 V e +4 V
 				{
 					estado=3;
 				}
 				else
 				{
-					if((media_x1>1660)&&(media_x1<1961))		//Entre -1 V e +1 V
+					if((media_x1>1760)&&(media_x1<2080))		//Entre -1 V e +1 V
 					{
 						estado=0;
 					}
 					else
 					{
-						if(media_x1<1600)												//Entre -1 V e -12 V
+						if(media_x1<1700)												//Entre -1 V e -12 V
 						{
 							estado=-12;
 						}
@@ -288,7 +288,7 @@ int chargingStationMain(int estado, int corrente_max)
 	static bool iniciar_recarga=false;					//Variável para autorizar o inicio de recarga
 
 	iniciar_recarga = DataStruct.startChargingByUser;
-	DataStruct.Contador = cont;
+	DataStruct.Contador_C = cont;
 	DataStruct.mcCharging = estadoDispositivoManobra;
 	DataStruct.stationCurrent = corrente_da_estacao; 
 //******Lógica que decide qual será a corrente máxima da estação e o estado da contatora*********************
@@ -393,7 +393,7 @@ int chargingStationMain(int estado, int corrente_max)
 	if(estado_F == true){
 		razao = 0;
 	}
-	return 1023;//razao;
+	return razao;
 }
 
 //Funcao para controle dos led indicadores ()
@@ -429,6 +429,7 @@ void acendeLed(){
 //Funcao para controle do incio/fim de recarga pelo botao físico
 void leBotao(){ 
 		static int cont = 0;
+		DataStruct.Contador_BT = cont;
     int bt_estado = gpio_get_level(START_RECHARGER_BT);
      
     if (bt_estado == 1) {
@@ -459,15 +460,15 @@ void printTela(){
 	printf("AD CP: %d\n", DataStruct.Media_Piloto);
 	printf("Estado: %d\n", DataStruct.vehicleState);
 
-	//printf("AD PP: %d\n", DataStruct.Ad_Proximidade);
+	printf("AD PP: %d\n", DataStruct.Ad_Proximidade);
 	printf("Cabo: %d\n\n", DataStruct.cableCurrent);
 	// printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
 	// printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
 	
 	printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);
 	printf("Razao: %d\n\n", DataStruct.dutyCycle);
-
-	// printf("Corrente_estacao: %d\n", Dados.Corrente_Estacao);
+	printf("Contador C: %d\n", DataStruct.Contador_C);
+	printf("Contador BT: %d\n", DataStruct.Contador_BT);
 	
 	// printf("Carregando: %d\n", Dados.mcCharging);
 	// printf("Contador: %d\n\n", Dados.Contador);
