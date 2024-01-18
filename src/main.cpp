@@ -56,6 +56,8 @@ gpio_num_t LED_C = GPIO_NUM_2;
 gpio_num_t LED_D = GPIO_NUM_18; 
 gpio_num_t START_RECHARGER_BT = GPIO_NUM_9;
 #define SPEED_MODE_TIMER LEDC_LOW_SPEED_MODE // LEDC_LOW_MODE_MAX
+#define PIN_SDA 42
+#define PIN_SCL 39
 #endif
 // DEFINIR VARIAVEIS--------------------------------------------------------------------------------------------
 static ledc_channel_config_t ledc_channel;
@@ -154,10 +156,10 @@ void get_wattmeter_data()
 
 	wattmeter.readRMS(&DataStruct.wVoltage, &DataStruct.wCurrent);
 	volts = DataStruct.wVoltage * 4.77; 
-	DataStruct.instaCurrent = DataStruct.wCurrent * 11;	
+	corrente = DataStruct.wCurrent * 11;	
 
 	filteredVolts = updateFilteredVolts(volts);
-    filteredCurrents = updateFilteredCurrents(corrente);
+  filteredCurrents = updateFilteredCurrents(corrente);
 	
 	DataStruct.instaVoltage = filteredVolts;
 	DataStruct.instaCurrent = filteredCurrents;
@@ -170,11 +172,11 @@ void wattmeterTask(void *pvParameters) {
     while (1) {
         get_wattmeter_data(); 
 
-        UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-        Serial.print("Espaço livre mínimo da pilha: ");
-        Serial.println(uxHighWaterMark);
+        // UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+        // Serial.print("Espaço livre mínimo da pilha: ");
+        // Serial.println(uxHighWaterMark);
 
-        vTaskDelay(pdMS_TO_TICKS(10000)); // Espera por 10 segundos
+        vTaskDelay(pdMS_TO_TICKS(10)); // Espera por 10 segundos
     }
 }
 
@@ -207,7 +209,7 @@ void timer_callback(void *param)
 void setup()
 {
 	Serial.begin(115200);
-	Wire.begin();
+	Wire.begin(PIN_SDA, PIN_SCL);
 
 	// Initialize sensor using default I2C address
 	if (wattmeter.begin(0x60) == false)
@@ -217,7 +219,6 @@ void setup()
 
 	wattmeter.setBypassNenable(true, true);
 	wattmeter.setNumberOfSamples(1023, true);
-
 	wattmeter.setDividerRes(4000000);
 
 

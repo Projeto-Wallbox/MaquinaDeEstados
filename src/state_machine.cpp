@@ -460,15 +460,15 @@ void dispositivoDeManobra(int acao){
 void printTela(){
 	// printf("Estado: %d\n", Dados.Estado_Veiculo);
 	//printf("AD CP: %d\n", DataStruct.Media_Piloto);
-	printf("Estado: %d\n", DataStruct.vehicleState);
+	// printf("Estado: %d\n", DataStruct.vehicleState);
 
 	//printf("AD PP: %d\n", DataStruct.Ad_Proximidade);
-	printf("Cabo: %d\n\n", DataStruct.cableCurrent);
+	// printf("Cabo: %d\n\n", DataStruct.cableCurrent);
 	// printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
 	// printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
 	
-	printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);
-	printf("Razao: %d\n\n", DataStruct.dutyCycle);
+	// printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);
+	// printf("Razao: %d\n\n", DataStruct.dutyCycle);
 	//printf("Contador C: %d\n", DataStruct.Contador_C);
 	//printf("Contador BT: %d\n", DataStruct.Contador_BT);
 	
@@ -478,9 +478,9 @@ void printTela(){
 	// printf("Available: %d\n", Dados.mcAvailable);
 	// printf("Preparing: %d\n", Dados.mcPreparing);
 	// printf("Charging: %d\n\n", Dados.mcCharging);
-	printf("Tensão: %d\n", DataStruct.instaVoltage);
-	printf("Corrente: %d\n", DataStruct.instaCurrent);
-	printf("Potência: %d\n\n", DataStruct.powerApparent);
+	printf("Tensão: %0.3f\n", DataStruct.instaVoltage);
+	printf("Corrente: %0.3f\n", DataStruct.instaCurrent);
+	printf("Potência: %0.3f\n\n", DataStruct.powerApparent);
 }
 
 void stateMachineControl(int state, int dutyCycle){
