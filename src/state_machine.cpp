@@ -449,26 +449,26 @@ void leBotao(){
 void dispositivoDeManobra(int acao){
 	if(acao == 1){
 		gpio_set_level(RELE_L1, true); // Desliga Dispositivo de manobra
-		gpio_set_level(RELE_L2, true); // Desliga Dispositivo de manobra
+		gpio_set_level(RELE_L3, true); // Desliga Dispositivo de manobra
 	}else{
 		gpio_set_level(RELE_L1, false); // Desliga Dispositivo de manobra
-		gpio_set_level(RELE_L2, false); // Desliga Dispositivo de manobra
+		gpio_set_level(RELE_L3, false); // Desliga Dispositivo de manobra
 	}
 }
 
 //Funcao auxiliar só para printar na tela (Temporária)
 void printTela(){
-	// printf("Estado: %d\n", Dados.Estado_Veiculo);
 	//printf("AD CP: %d\n", DataStruct.Media_Piloto);
-	// printf("Estado: %d\n", DataStruct.vehicleState);
+	printf("=================================\n");
+	printf("Estado: %d\n", DataStruct.vehicleState);
 
 	//printf("AD PP: %d\n", DataStruct.Ad_Proximidade);
-	// printf("Cabo: %d\n\n", DataStruct.cableCurrent);
+	printf("Cabo: %d\n\n", DataStruct.cableCurrent);
 	// printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
 	// printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
 	
-	// printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);
-	// printf("Razao: %d\n\n", DataStruct.dutyCycle);
+	printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);
+	printf("Razao: %d\n\n", DataStruct.dutyCycle);
 	//printf("Contador C: %d\n", DataStruct.Contador_C);
 	//printf("Contador BT: %d\n", DataStruct.Contador_BT);
 	
@@ -480,7 +480,8 @@ void printTela(){
 	// printf("Charging: %d\n\n", Dados.mcCharging);
 	printf("Tensão: %0.3f\n", DataStruct.instaVoltage);
 	printf("Corrente: %0.3f\n", DataStruct.instaCurrent);
-	printf("Potência: %0.3f\n\n", DataStruct.powerApparent);
+	printf("Potência: %0.3f\n", DataStruct.powerApparent);
+	printf("Energia: %0.3f\n", DataStruct.energy);
 }
 
 void stateMachineControl(int state, int dutyCycle){

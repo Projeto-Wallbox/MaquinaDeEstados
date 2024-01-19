@@ -11,10 +11,10 @@
 #include "state_machine.h"
 
 #include <Arduino.h>
-#include <WiFi.h>
-#include <MicroOcpp.h>
-#include <MicroOcpp_c.h>
-#include <MicroOcpp/Core/Configuration.h>
+// #include <WiFi.h>
+// #include <MicroOcpp.h>
+// #include <MicroOcpp_c.h>
+// #include <MicroOcpp/Core/Configuration.h>
 
 #include "SparkFun_ACS37800_Arduino_Library.h"
 #include <Wire.h>
@@ -41,14 +41,14 @@ gpio_num_t BT_INICIAR_RECARGA = GPIO_NUM_14; // Pino de entrada, para setar o in
 #endif
 
 #ifdef ESP32_S3
-gpio_num_t PILOT_PIN = GPIO_NUM_4;
+gpio_num_t PILOT_PIN = GPIO_NUM_8;
 gpio_num_t PINO_PROXIMIDADE = GPIO_NUM_7;
 gpio_num_t PWM_PIN = GPIO_NUM_6;
 
 gpio_num_t RELE_L1 = GPIO_NUM_11;     //Seria GPIO11 na PCB
-gpio_num_t RELE_L2 = GPIO_NUM_38;     //Seria GPIO12 na PCB
-gpio_num_t RELE_L3 = GPIO_NUM_46;     //Seria GPIO13 na PCB
-gpio_num_t RELE_N = GPIO_NUM_2;       //Seria GPIO14 na PCB
+gpio_num_t RELE_L2 = GPIO_NUM_12;     //Seria GPIO12 na PCB
+gpio_num_t RELE_L3 = GPIO_NUM_13;     //Seria GPIO13 na PCB
+gpio_num_t RELE_N = GPIO_NUM_14;       //Seria GPIO14 na PCB
 
 gpio_num_t LED_A = GPIO_NUM_1;	// Estamos usando o led on do ESP para mostrar que a estacao ligada
 gpio_num_t LED_B = GPIO_NUM_10;	// O LEDB(Estado 9), piscando (Carregando) 
@@ -70,6 +70,7 @@ const int numSamplescurrents = 200;      // Number of samples for averaging
 int currentIndex = 0;                    // Current index in the buffer
 int currentIndexcurrents = 0;            // Current index in the buffer
 int c = 0;                               // Counter used in the loop function
+int cont = 0;                             // Contador utilizadao para energia
 
 float voltsBuffer[numSamples];           // Buffer to store the last samples of voltage values
 float currentBuffer[numSamples];         // Buffer to store the last samples of current values
@@ -84,8 +85,13 @@ unsigned long previousCalcMillis = 0;    // Variável para armazenar o tempo da 
 unsigned long previousMillis = 0;        // Variável para armazenar o tempo anterior
 unsigned long elapsedTime = 0;           // Variável para armazenar o tempo decorrido
 
+bool voltageBelowThreshold = false;      // Auxiliary variable to track if voltage is below the threshold
+bool currentAboveThreshold = false;      // Auxiliary variable to track if current is above the threshold
+bool voltageAboveHighThreshold = false;  // Auxiliary variable to track if voltage is above the high threshold
+
 //DEFINIÇÃO DE FUNÇÕES DO WATTIMETRO //@TODO - colocar em outro arquivo--------------------------------------------------
-float updateFilteredVolts(float newValue) 
+
+void updateFilteredVolts(float newValue) 
 {
   voltsBuffer[currentIndex] = newValue;
   currentIndex = (currentIndex + 1) % numSamples;
@@ -97,10 +103,28 @@ float updateFilteredVolts(float newValue)
   }
   filteredVolts = sum / numSamples;
 
-  return filteredVolts;
+  // Check if the filteredVolts is below 201 for more than 5 consecutive samples
+  if (filteredVolts < 201)
+  {
+    voltageBelowThreshold = true;
+  }
+  else
+  {
+    voltageBelowThreshold = false;
+  }
+
+  // Check if the filteredVolts is above 231 for more than 5 consecutive samples
+  if (filteredVolts > 231)
+  {
+    voltageAboveHighThreshold = true;
+  }
+  else
+  {
+    voltageAboveHighThreshold = false;
+  }
 }
 
-float updateFilteredCurrents(float newValue) 
+void updateFilteredCurrents(float newValue) 
 {
   currentBuffer[currentIndexcurrents] = newValue;
   currentIndexcurrents = (currentIndexcurrents + 1) % numSamplescurrents;
@@ -112,65 +136,70 @@ float updateFilteredCurrents(float newValue)
   }
   filteredCurrents = sumc / numSamplescurrents;
 
-  return filteredCurrents;
+  // Check if the filteredCurrents is above 32 for more than 5 consecutive samples
+  if (filteredCurrents > 32)
+  {
+    currentAboveThreshold = true;
+  }
+  else
+  {
+    currentAboveThreshold = false;
+  }
 }
 
-float showRMSvalues()  
+void PowerReactiveandActive()
+{
+  float pactive   = 0.0;
+  float preactive = 0.0;
+  float papparent = 0.0;
+  float pfactor   = 0.0;
+  bool posangle   = 0;
+  bool pospf      = 0;
+
+  wattmeter.readPowerActiveReactive(&pactive, &preactive);            // Read the active and reactive power
+  PowerActive = pactive;
+  wattmeter.readPowerFactor(&papparent, &pfactor, &posangle, &pospf); // Read the apparent power and the power factor
+
+}
+
+void calculateEnergy() {
+  energy += (PowerApparent * 10) / (3600.0 * 1000.0);  // Calcula a energia em kWh
+}
+
+void showRMSvalues()  
 {
   float volts = 0;
   float amps = 0;
 
   wattmeter.readRMS(&volts, &amps);
 
-  float voltsfiltred = volts * 13.37*1.02;
-  float ampsfiltred = amps * 11.9;
+  float voltsfiltred = volts * 1;
+  float ampsfiltred = amps * 1;
+  
   
   updateFilteredVolts(voltsfiltred);
   updateFilteredCurrents(ampsfiltred);
- 
-  PowerApparent = filteredCurrents * filteredVolts;
-
-  return PowerApparent;
-}
-
-float calculateEnergy() 
-{
-  unsigned long currentMillis = millis();
-  elapsedTime = currentMillis - previousMillis;  // Calcula o tempo decorrido desde a última medição
   
-  // Calcula a energia acumulada com base na potência ativa e no tempo decorrido
-  float timeInSeconds = elapsedTime / 1000.0;   // Converte o tempo de milissegundos para segundos
-  energy += (PowerApparent * timeInSeconds) / (3600.0 * 1000.0);  // Calcula a energia em kWh
+  if(filteredCurrents>2)
+  {
+    PowerApparent = filteredCurrents * filteredVolts;
+  }else{
+    PowerApparent = 0;
+    filteredCurrents = 0;
+  }
   
-  previousMillis = currentMillis;  // Atualiza o tempo anterior para o tempo atual
-
-  return energy;
-}
-
-void get_wattmeter_data()
-{
-	float filteredVolts = 0;
-	float filteredCurrents = 0;
-	float volts = 0;
-	float corrente= 0;
-
-	wattmeter.readRMS(&DataStruct.wVoltage, &DataStruct.wCurrent);
-	volts = DataStruct.wVoltage * 4.77; 
-	corrente = DataStruct.wCurrent * 11;	
-
-	filteredVolts = updateFilteredVolts(volts);
-  filteredCurrents = updateFilteredCurrents(corrente);
-	
-	DataStruct.instaVoltage = filteredVolts;
-	DataStruct.instaCurrent = filteredCurrents;
-	
-	DataStruct.powerApparent = filteredVolts * filteredCurrents;
-	//DataStruct.energy += (DataStruct.powerApparent * 10) / (3600.0 * 1000.0);
 }
 
 void wattmeterTask(void *pvParameters) {
     while (1) {
-        get_wattmeter_data(); 
+        showRMSvalues();
+        cont++;
+    
+        if(cont==1000){
+          calculateEnergy(); 
+          cont =0;
+        }
+        
 
         // UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
         // Serial.print("Espaço livre mínimo da pilha: ");
@@ -209,18 +238,22 @@ void timer_callback(void *param)
 void setup()
 {
 	Serial.begin(115200);
-	Wire.begin(PIN_SDA, PIN_SCL);
+  Wire.begin(PIN_SDA, PIN_SCL);
 
-	// Initialize sensor using default I2C address
-	if (wattmeter.begin(0x60) == false)
-	{
-		Serial.print(F("ACS37800 not detected. Check connections and I2C address. Freezing..."));
-	}
+//   pinMode(UnderVoltage, OUTPUT);
+//   pinMode(OverVoltage, OUTPUT);
+//   pinMode(OverCurrent, OUTPUT);
 
-	wattmeter.setBypassNenable(true, true);
+  // Initialize sensor using default I2C address
+  if (wattmeter.begin(0x60) == false)
+  {
+    Serial.print(F("ACS37800 not detected. Check connections and I2C address. Freezing..."));
+  }
+
+	//mySensor.setBypassNenable(true, true);
 	wattmeter.setNumberOfSamples(1023, true);
+	wattmeter.setSenseRes(3000);
 	wattmeter.setDividerRes(4000000);
-
 
     //Serial.print(F("[main] Wait for WiFi: "));
 
@@ -252,8 +285,8 @@ void setup()
 	// CONFIGURA OS CANAIS ADC ---------------------------------------------------------------------------
 	esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_12Bit, 0, &adc_chars);
 	adc1_config_width(ADC_WIDTH_12Bit);
-	adc1_config_channel_atten(ADC1_CHANNEL_3, ADC_ATTEN_DB_11);
-	adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);
+	adc1_config_channel_atten(ADC1_CHANNEL_7, ADC_ATTEN_DB_11);   //PIN_PILOT
+	adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);   //PIN_PROXIMIDADE
 
 	// CONFIGURA NEW PWM
 	ledc_timer_config_t ledc_timer = {
@@ -272,6 +305,7 @@ void setup()
 	ledc_channel.timer_sel = LEDC_TIMER_0;
 	ledc_channel_config(&ledc_channel);
 
+
 	// CONFIGURA O TIMER E INTERRUPCAOO PRINCIPAL-------------------------------------------------------------------------
 	const esp_timer_create_args_t my_timer_args = {
 		.callback = &timer_callback,
@@ -279,6 +313,9 @@ void setup()
 	esp_timer_handle_t timer_handler;
 	ESP_ERROR_CHECK(esp_timer_create(&my_timer_args, &timer_handler));
 	ESP_ERROR_CHECK(esp_timer_start_periodic(timer_handler, 167)); // 167 u,f= 6kHz P/ler 6 amostras de um ciclo PWM
+
+
+
 
 	// mocpp_initialize(OCPP_BACKEND_URL, OCPP_CHARGE_BOX_ID, "Intral Wallbox", "Intral");
 
@@ -297,9 +334,48 @@ void setup()
 
 
 void loop()
-{
+{unsigned long currentMillis = millis();
+
+   // Executa as funções de cálculo a cada 10 milissegundos
+   if (currentMillis - previousCalcMillis >= 10)
+   {
+      // showRMSvalues();
+      // calculateEnergy();
+      //PowerReactiveandActive();
+      DataStruct.instaVoltage = filteredVolts;
+      DataStruct.instaCurrent = filteredCurrents;
+      DataStruct.powerApparent = PowerApparent;
+      DataStruct.energy = energy;
+   }
+
+   c++;
+
+   if (c == 100)
+   {
+      // Serial.print(F(" VoltsRMS: "));
+      // Serial.println(filteredVolts, 5);
+
+      // Serial.print(F(" CurrentRMS: "));
+      // Serial.println(filteredCurrents);
+      // Serial.print(F(" PowerApparent: "));
+      // Serial.println(PowerApparent, 5);
+      // // Serial.print(F(" PowerActive: "));
+      // // Serial.println(PowerActive, 5);
+      // Serial.print(F(" Energy: "));
+      // Serial.println(energy, 5); // Exibe a energia acumulada em kWh
+      // Serial.println("============================");
+      // c = 0;
+   }
+   // Use millis() para a pausa de 10 milissegundos em vez de delay(10)
+   while (millis() - currentMillis < 10)
+   {
+      // Aguarda por 10 milissegundos
+   }
+
+
 	// mocpp_loop();
-	// if (DataStruct.mcAvailable)
+	
+  // if (DataStruct.mcAvailable)
 	// {
 	// 	setConnectorPluggedInput(isEvNotConnected, connectorId);
 	// }
