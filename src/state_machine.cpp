@@ -5,6 +5,7 @@
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
 #include "state_machine.h"
+#include "wattmeter_sensor.h"
 
 GlobalStruct DataStruct; //Inicializa estrutura de dados (VER MELHOR FORMA)
 
@@ -478,9 +479,10 @@ void printTela(){
 	// printf("Available: %d\n", Dados.mcAvailable);
 	// printf("Preparing: %d\n", Dados.mcPreparing);
 	// printf("Charging: %d\n\n", Dados.mcCharging);
-	printf("Tensão: %0.3f\n", DataStruct.instaVoltage);
-	printf("Corrente: %0.3f\n", DataStruct.instaCurrent);
-	printf("Potência: %0.3f\n\n", DataStruct.powerApparent);
+	printf("Tensão: %0.3f\n", myWattmeter.getFilteredVolts());
+	printf("Corrente: %0.3f\n", myWattmeter.getFilteredCurrents());
+	printf("Potência: %0.3f\n", myWattmeter.getPowerApparent());
+	printf("Energia: %0.3f\n\n", myWattmeter.getEnergy());
 }
 
 void stateMachineControl(int state, int dutyCycle){

@@ -16,18 +16,18 @@
 #include <MicroOcpp_c.h>
 #include <MicroOcpp/Core/Configuration.h>
 
-#include "SparkFun_ACS37800_Arduino_Library.h"
-#include <Wire.h>
+//#include "SparkFun_ACS37800_Arduino_Library.h"
+//#include <Wire.h>
+#include "wattmeter_sensor.h"
 
-ACS37800 wattmeter; // Create an object of the ACS37800 class
+//ACS37800 wattmeter; // Create an object of the ACS37800 class
 //const int connectorId = 1;
-
 // DEFINIR PINOS--------------------------------------------------------------------------------------------------
 
 #ifdef ESP32_DEV
-gpio_num_t PINO_PILOTO = GPIO_NUM_32;		 // Pino para leitura AD do Sinal VA
+gpio_num_t PILOT_PIN = GPIO_NUM_32;		 // Pino para leitura AD do Sinal VA
 gpio_num_t PINO_PROXIMIDADE = GPIO_NUM_33;	 // Pino para leitura AD do do cabo conectado
-gpio_num_t PINO_PWM = GPIO_NUM_15;			 // Pino no qual é gerado o sinal PWM
+gpio_num_t PWM_PIN = GPIO_NUM_15;			 // Pino no qual é gerado o sinal PWM
 gpio_num_t RELE_N = GPIO_NUM_26;			 // Pino de saida, para acionar o Relé do Neutro (N)
 gpio_num_t RELE_L1 = GPIO_NUM_19;			 // Pino de saida, para acionar o Relé da fase 1 (L1)
 gpio_num_t RELE_L2 = GPIO_NUM_21;			 // Pino de saida, para acionar o Relé da fase 2 (L2)
@@ -36,19 +36,21 @@ gpio_num_t LED_A = GPIO_NUM_2;				 // Led de EVSE ON/OF
 gpio_num_t LED_B = GPIO_NUM_18;				 // Led de carregamento
 gpio_num_t LED_C = GPIO_NUM_4;				 // Led de conexao a rede Wi-fi
 gpio_num_t LED_D = GPIO_NUM_5;				 // Led de erro ou falha
-gpio_num_t BT_INICIAR_RECARGA = GPIO_NUM_14; // Pino de entrada, para setar o inicio da recarga pela Estacao
+gpio_num_t START_RECHARGER_BT = GPIO_NUM_14; // Pino de entrada, para setar o inicio da recarga pela Estacao
+#define PIN_SDA 21
+#define PIN_SCL 22
 #define SPEED_MODE_TIMER LEDC_HIGH_SPEED_MODE
 #endif
 
 #ifdef ESP32_S3
-gpio_num_t PILOT_PIN = GPIO_NUM_4;
+gpio_num_t PILOT_PIN = GPIO_NUM_8;
 gpio_num_t PINO_PROXIMIDADE = GPIO_NUM_7;
 gpio_num_t PWM_PIN = GPIO_NUM_6;
 
 gpio_num_t RELE_L1 = GPIO_NUM_11;     //Seria GPIO11 na PCB
-gpio_num_t RELE_L2 = GPIO_NUM_38;     //Seria GPIO12 na PCB
-gpio_num_t RELE_L3 = GPIO_NUM_46;     //Seria GPIO13 na PCB
-gpio_num_t RELE_N = GPIO_NUM_2;       //Seria GPIO14 na PCB
+gpio_num_t RELE_L2 = GPIO_NUM_12;     //Seria GPIO12 na PCB
+gpio_num_t RELE_L3 = GPIO_NUM_13;     //Seria GPIO13 na PCB
+gpio_num_t RELE_N = GPIO_NUM_14;       //Seria GPIO14 na PCB
 
 gpio_num_t LED_A = GPIO_NUM_1;	// Estamos usando o led on do ESP para mostrar que a estacao ligada
 gpio_num_t LED_B = GPIO_NUM_10;	// O LEDB(Estado 9), piscando (Carregando) 
@@ -64,114 +66,17 @@ static ledc_channel_config_t ledc_channel;
 static esp_adc_cal_characteristics_t adc_chars; // Fornecido pela Esressif para calibracao do ADC
 int Razao_Ciclica_PWM = 1023;					// Variavel que armazena valor da razao cicllica
 
-//DEFINIR VARIÁVEIS DO WATTÍMETRO------------------------------------------------------------------------------=
-const int numSamples = 200;              // Number of samples for averaging
-const int numSamplescurrents = 200;      // Number of samples for averaging 
-int currentIndex = 0;                    // Current index in the buffer
-int currentIndexcurrents = 0;            // Current index in the buffer
-int c = 0;                               // Counter used in the loop function
-
-float voltsBuffer[numSamples];           // Buffer to store the last samples of voltage values
-float currentBuffer[numSamples];         // Buffer to store the last samples of current values
-float filteredVolts = 0.0;               // Filtered value of voltage
-float filteredCurrents = 0.0;            // Filtered value of current
-float PowerApparent;                     // Variável que recebe o valor da potencia aparente
-float PowerActive;                       // Variável que recebe o valor da potencia ativa
-float energy = 0.0;                      // Variável para armazenar a energia acumulada em kWh 
-
-unsigned long previousPrintMillis = 0;   // Variável para armazenar o tempo da última impressão
-unsigned long previousCalcMillis = 0;    // Variável para armazenar o tempo da última execução das funções de cálculo
-unsigned long previousMillis = 0;        // Variável para armazenar o tempo anterior
-unsigned long elapsedTime = 0;           // Variável para armazenar o tempo decorrido
-
-//DEFINIÇÃO DE FUNÇÕES DO WATTIMETRO //@TODO - colocar em outro arquivo--------------------------------------------------
-float updateFilteredVolts(float newValue) 
-{
-  voltsBuffer[currentIndex] = newValue;
-  currentIndex = (currentIndex + 1) % numSamples;
-
-  // Calculate the average of the samples in the buffer
-  float sum = 0.0;
-  for (int i = 0; i < numSamples; ++i) {
-    sum += voltsBuffer[i];
-  }
-  filteredVolts = sum / numSamples;
-
-  return filteredVolts;
-}
-
-float updateFilteredCurrents(float newValue) 
-{
-  currentBuffer[currentIndexcurrents] = newValue;
-  currentIndexcurrents = (currentIndexcurrents + 1) % numSamplescurrents;
-
-  // Calculate the average of the samples in the buffer
-  float sumc = 0.0;
-  for (int i = 0; i < numSamplescurrents; ++i) {
-    sumc += currentBuffer[i];
-  }
-  filteredCurrents = sumc / numSamplescurrents;
-
-  return filteredCurrents;
-}
-
-float showRMSvalues()  
-{
-  float volts = 0;
-  float amps = 0;
-
-  wattmeter.readRMS(&volts, &amps);
-
-  float voltsfiltred = volts * 13.37*1.02;
-  float ampsfiltred = amps * 11.9;
-  
-  updateFilteredVolts(voltsfiltred);
-  updateFilteredCurrents(ampsfiltred);
- 
-  PowerApparent = filteredCurrents * filteredVolts;
-
-  return PowerApparent;
-}
-
-float calculateEnergy() 
-{
-  unsigned long currentMillis = millis();
-  elapsedTime = currentMillis - previousMillis;  // Calcula o tempo decorrido desde a última medição
-  
-  // Calcula a energia acumulada com base na potência ativa e no tempo decorrido
-  float timeInSeconds = elapsedTime / 1000.0;   // Converte o tempo de milissegundos para segundos
-  energy += (PowerApparent * timeInSeconds) / (3600.0 * 1000.0);  // Calcula a energia em kWh
-  
-  previousMillis = currentMillis;  // Atualiza o tempo anterior para o tempo atual
-
-  return energy;
-}
-
-void get_wattmeter_data()
-{
-	float filteredVolts = 0;
-	float filteredCurrents = 0;
-	float volts = 0;
-	float corrente= 0;
-
-	wattmeter.readRMS(&DataStruct.wVoltage, &DataStruct.wCurrent);
-	volts = DataStruct.wVoltage * 4.77; 
-	corrente = DataStruct.wCurrent * 11;	
-
-	filteredVolts = updateFilteredVolts(volts);
-  filteredCurrents = updateFilteredCurrents(corrente);
-	
-	DataStruct.instaVoltage = filteredVolts;
-	DataStruct.instaCurrent = filteredCurrents;
-	
-	DataStruct.powerApparent = filteredVolts * filteredCurrents;
-	//DataStruct.energy += (DataStruct.powerApparent * 10) / (3600.0 * 1000.0);
-}
-
+// TASK DO WATTIMETRO
 void wattmeterTask(void *pvParameters) {
-    while (1) {
-        get_wattmeter_data(); 
-
+    int cont = 0;
+		while (1) {
+        myWattmeter.showRMSvalues();
+        cont++;
+    
+        if(cont==1000){
+          myWattmeter.calculateEnergy(); 
+          cont = 0;
+        }
         // UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
         // Serial.print("Espaço livre mínimo da pilha: ");
         // Serial.println(uxHighWaterMark);
@@ -180,12 +85,12 @@ void wattmeterTask(void *pvParameters) {
     }
 }
 
-// FUNCAO DE INTERRUPCAO DO TIMER
+// FUNCAO DE INTERRUPCAO DA ME
 void timer_callback(void *param)
 {
 	Razao_Ciclica_PWM = funcaoInterrupcao();
-	ESP_ERROR_CHECK(ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, Razao_Ciclica_PWM));
-	ESP_ERROR_CHECK(ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0));
+	ESP_ERROR_CHECK(ledc_set_duty(SPEED_MODE_TIMER, LEDC_CHANNEL_0, Razao_Ciclica_PWM));
+	ESP_ERROR_CHECK(ledc_update_duty(SPEED_MODE_TIMER, LEDC_CHANNEL_0));
 }
 
 // ############### OCPP
@@ -208,21 +113,22 @@ void timer_callback(void *param)
 
 void setup()
 {
-	Serial.begin(115200);
-	Wire.begin(PIN_SDA, PIN_SCL);
+	config_wattmeter my_config = {
+		.pinscl = PIN_SCL,  
+    .pinsda = PIN_SDA,   
+    .senseRes = 3000,
+    .DividerRes = 4000000,
+    .numsamples = 50,      
+    .numsamplescurrents = 50, 
+    .undervoltage = 5,
+    .overvoltage = 4, 
+    .overvurrent= 13,
+	};
 
-	// Initialize sensor using default I2C address
-	if (wattmeter.begin(0x60) == false)
-	{
-		Serial.print(F("ACS37800 not detected. Check connections and I2C address. Freezing..."));
-	}
-
-	wattmeter.setBypassNenable(true, true);
-	wattmeter.setNumberOfSamples(1023, true);
-	wattmeter.setDividerRes(4000000);
+	myWattmeter.initWattmeter(my_config);
 
 
-    //Serial.print(F("[main] Wait for WiFi: "));
+		//Serial.print(F("[main] Wait for WiFi: "));
 
     // WiFi.begin(ssid, password);
 		// if(WiFi.status() == WL_CONNECTED) Serial.print(F("Conected\n"));
@@ -233,6 +139,7 @@ void setup()
     //     delay(1000);
     //  }
 		// Serial.print(F("Connected.\n"));
+		
 	DataStruct.currentSetByUser = 32; // Valor de corrente externo usuario/APP/OCPP
 	DataStruct.startChargingByUser = 0;	 // valor alterado para iniciar ou encerrar recarga usuario/APP/OCPP
 
@@ -252,8 +159,8 @@ void setup()
 	// CONFIGURA OS CANAIS ADC ---------------------------------------------------------------------------
 	esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_12Bit, 0, &adc_chars);
 	adc1_config_width(ADC_WIDTH_12Bit);
-	adc1_config_channel_atten(ADC1_CHANNEL_3, ADC_ATTEN_DB_11);
-	adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);
+	adc1_config_channel_atten(ADC1_CHANNEL_7, ADC_ATTEN_DB_11);  //pino CP
+	adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);  //pino PP
 
 	// CONFIGURA NEW PWM
 	ledc_timer_config_t ledc_timer = {
