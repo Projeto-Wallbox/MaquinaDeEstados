@@ -18,5 +18,4 @@ public:
     bool getStartCharging() const;
     bool getStopCharging() const;
 
-
 };

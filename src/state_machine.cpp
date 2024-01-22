@@ -44,6 +44,8 @@ int funcaoInterrupcao()
 	{
 		//TESTE DE LEITURA DO ESTADO E0
 	  if(DataStruct.vehicleState == 0){
+			//Colocar razão ciclica para 100%
+			//Acionar o circuito de alimentação extra via capacitor/bateria
 			//printf("ACIONAR BATERIA");   /// em teste
 		}
 
@@ -403,7 +405,7 @@ void acendeLed(){
 	static bool ledEstadoErro = false;
 
 //LED A - Led EVSE on/off
-	gpio_set_level(LED_A, true);
+	//gpio_set_level(LED_A, true);
 
 //LED B - Led de carregamento(veiculo conectado ou veiculo carregando) 
 		if(DataStruct.vehicleState==9 || DataStruct.vehicleState==6)
@@ -449,11 +451,11 @@ void leBotao(){
 //Funcao para controle do dispositivo de manobra(relés)
 void dispositivoDeManobra(int acao){
 	if(acao == 1){
-		gpio_set_level(RELE_L1, true); // Desliga Dispositivo de manobra
 		gpio_set_level(RELE_L2, true); // Desliga Dispositivo de manobra
+		gpio_set_level(RELE_L3, true); // Desliga Dispositivo de manobra
 	}else{
-		gpio_set_level(RELE_L1, false); // Desliga Dispositivo de manobra
 		gpio_set_level(RELE_L2, false); // Desliga Dispositivo de manobra
+		gpio_set_level(RELE_L3, false); // Desliga Dispositivo de manobra
 	}
 }
 

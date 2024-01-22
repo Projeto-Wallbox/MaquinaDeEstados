@@ -16,6 +16,7 @@
 #include <MicroOcpp_c.h>
 #include <MicroOcpp/Core/Configuration.h>
 
+
 //#include "SparkFun_ACS37800_Arduino_Library.h"
 //#include <Wire.h>
 #include "wattmeter_sensor.h"
@@ -122,7 +123,7 @@ void setup()
     .numsamplescurrents = 50, 
     .undervoltage = 5,
     .overvoltage = 4, 
-    .overvurrent= 13,
+    .overcurrent= 13,
 	};
 
 	myWattmeter.initWattmeter(my_config);

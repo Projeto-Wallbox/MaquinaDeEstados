@@ -2,13 +2,10 @@
 #include <Wire.h>
 #include "wattmeter_sensor.h"
 
-ACS37800 mySensor;      // Create an object of the ACS37800 class
-WattmeterSensor myWattmeter;
-// //Constructor
-// WattmeterSensor::WattmeterSensor()
-// {
-// }
+ACS37800 mySensor;            // Create an object of the ACS37800 class
+WattmeterSensor myWattmeter;  // Create an object of the WattmeterSensor class
 
+// Calculation of the average of the last samples (numSamples) stored in voltsBuffer[]
 void WattmeterSensor::updateFilteredVolts(float newValue)
 {
   float voltsBuffer[numSamples];           // Buffer to store the last samples of voltage values
@@ -44,9 +41,10 @@ void WattmeterSensor::updateFilteredVolts(float newValue)
   }
 }
 
+// Calculate the average of the last samples (numSamplescurrents) stored in currentBuffer[]
 void WattmeterSensor::updateFilteredCurrents(float newValue) 
 {
-  float currentBuffer[numSamples];         // Buffer to store the last samples of current values
+  float currentBuffer[numSamplescurrents];         // Buffer to store the last samples of current values
 
   currentBuffer[currentIndexcurrents] = newValue;
   currentIndexcurrents = (currentIndexcurrents + 1) % numSamplescurrents;
@@ -69,6 +67,7 @@ void WattmeterSensor::updateFilteredCurrents(float newValue)
   }
 }
 
+// Reads register 0x21 and stores it in PowerActive
 void WattmeterSensor::PowerReactiveandActive()
 {
   float pactive   = 0.0;
@@ -84,6 +83,9 @@ void WattmeterSensor::PowerReactiveandActive()
 
 }
 
+/* Reads voltage and current in the register,
+calculates the average, saves the filtered values ​​in filteredVolts
+and filteredCurrents*/
 void WattmeterSensor::showRMSvalues()  
 {
   float volts = 0;
@@ -100,16 +102,18 @@ void WattmeterSensor::showRMSvalues()
   PowerApparent = filteredCurrents * filteredVolts;
 }
 
+// Calculate energy in kWh
 void WattmeterSensor::calculateEnergy() {
   energy += (PowerApparent * 10) / (3600.0 * 1000.0);  // Calcula a energia em kWh
 }
 
-void WattmeterSensor::initWattmeter(config_wattmeter &params){ //teste
+// Configuration and initialization of I2C communication and the ACS37800 Sensor
+void WattmeterSensor::initWattmeter(config_wattmeter &params){
     numSamples = params.numsamples;    
     numSamplescurrents= params.numsamplescurrents;
     UnderVoltage = params.undervoltage; 
     OverVoltage = params.overvoltage;
-    OverCurrent = params.overvurrent;
+    OverCurrent = params.overcurrent;
 
     Serial.begin(115200);
     Wire.begin(params.pinsda, params.pinscl);
@@ -131,39 +135,48 @@ void WattmeterSensor::initWattmeter(config_wattmeter &params){ //teste
 
 }
 
+// Change the value of numSamples
 void WattmeterSensor::setNumSamples(int newSamples){
   numSamples = newSamples;
 }
 
+// Change the value of numSamplescurrents
 void WattmeterSensor::setnumSamplescurrents(int newSamplescurrents){
   numSamplescurrents = newSamplescurrents;
 }
 
+// Change the value of UnderVoltage
 void WattmeterSensor::setUnderVoltage(int newUnderVoltage) {
     UnderVoltage = newUnderVoltage;
 }
 
+// Change the OverVoltage value
 void WattmeterSensor::setOverVoltage(int newOverVoltage) {
     OverVoltage = newOverVoltage;
 }
 
+// Change the OverCurrent value
 void WattmeterSensor::setOverCurrent(int newOverCurrent) {
     OverCurrent = newOverCurrent;
 }
 
-float WattmeterSensor::getFilteredVolts(){
+// Returns the filtered voltage value (filteredVolts)
+float WattmeterSensor::getFilteredVolts() const{
   return filteredVolts;
 }
 
-float WattmeterSensor::getFilteredCurrents(){
+// Returns the filtered current value (filteredCurrents)
+float WattmeterSensor::getFilteredCurrents() const{
   return filteredCurrents;
 }
 
-float WattmeterSensor::getPowerApparent(){
+// Returns the apparent power (PowerApparent)
+float WattmeterSensor::getPowerApparent() const{
   return PowerApparent;
 }
 
-float WattmeterSensor::getEnergy(){
+// Returns the calculated energy (energy)
+float WattmeterSensor::getEnergy() const{
   return energy;
 }
 
