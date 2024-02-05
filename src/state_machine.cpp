@@ -34,7 +34,7 @@ int funcaoInterrupcao()
 	cont_interfaceUsuario++;
 
 	// a cada 166 us (6kHz)
-	medida_piloto = adc1_get_raw(ADC1_CHANNEL_7);	 // Leitura do piloto (1).																			
+	medida_piloto = adc1_get_raw(CHANNEL_PILOT);	 // Leitura do piloto (1).																			
 	media_piloto = positivaPiloto(medida_piloto); // Calcula a média dos sinais (2)
 	DataStruct.vehicleState = estado_veiculo;  //atualiza estado na struct
 
@@ -50,7 +50,7 @@ int funcaoInterrupcao()
 		}
 
 		cont_principal = 0;
-		medida_proximidade = adc1_get_raw(ADC1_CHANNEL_6);     // Faz a leitura analogica do proximidade (3)
+		medida_proximidade = adc1_get_raw(CHANNEL_PROXIMIDADE);     // Faz a leitura analogica do proximidade (3)
 		cabo_conectado = correnteCabo(medida_proximidade);		 // Identificacao do Cabo (4)
 		estado_veiculo = defineEstado(media_piloto);           // Determina o Estado (5)
 	
@@ -90,7 +90,7 @@ int funcaoInterrupcao()
 	return razao_ciclica;
 }
 
-//Funcao que calcula media dos sinais lidos no AD Piloto
+//Função que calcula média dos sinais lidos no AD Piloto
 int positivaPiloto(int piloto)
 {
 	static int j=0;											//Lógica de determinação do valor máximo de um período
@@ -290,6 +290,7 @@ int chargingStationMain(int estado, int corrente_max)
 	static bool bloqueio_razao_ciclica=false;		//Variável que bloqueia a alteração da razão cíclica por 5 segundos
 	static bool iniciar_recarga=false;					//Variável para autorizar o inicio de recarga
 
+	//estado_F = monitorFaultStatus();
 	iniciar_recarga = DataStruct.startChargingByUser;
 	DataStruct.Contador_C = cont;
 	DataStruct.mcCharging = estadoDispositivoManobra;
@@ -451,46 +452,49 @@ void leBotao(){
 //Funcao para controle do dispositivo de manobra(relés)
 void dispositivoDeManobra(int acao){
 	if(acao == 1){
-		gpio_set_level(RELE_L2, true); // Desliga Dispositivo de manobra
-		gpio_set_level(RELE_L3, true); // Desliga Dispositivo de manobra
+		gpio_set_level(RELE_L1, true); // Liga Dispositivo de manobra
+		gpio_set_level(RELE_L2, true); // Liga Dispositivo de manobra
+		gpio_set_level(RELE_L3, true); // Liga Dispositivo de manobra
+		gpio_set_level(RELE_N, true); // Liga Dispositivo de manobra
 	}else{
+		gpio_set_level(RELE_L1, false); // Desliga Dispositivo de manobra
 		gpio_set_level(RELE_L2, false); // Desliga Dispositivo de manobra
 		gpio_set_level(RELE_L3, false); // Desliga Dispositivo de manobra
+		gpio_set_level(RELE_N, false); // Desliga Dispositivo de manobra
 	}
 }
 
 //Funcao auxiliar só para printar na tela (Temporária)
 void printTela(){
-	// printf("Estado: %d\n", Dados.Estado_Veiculo);
-	//printf("AD CP: %d\n", DataStruct.Media_Piloto);
-	// printf("Estado: %d\n", DataStruct.vehicleState);
-
-	//printf("AD PP: %d\n", DataStruct.Ad_Proximidade);
-	// printf("Cabo: %d\n\n", DataStruct.cableCurrent);
+	printf("Estado: %d\n", DataStruct.vehicleState);
+	printf("AD CP: %d\n\n", DataStruct.Media_Piloto);
+	
+	printf("Cabo: %d\n", DataStruct.cableCurrent);
+	printf("AD PP: %d\n\n", DataStruct.Ad_Proximidade);
 	// printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
 	// printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
 	
-	// printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);
-	// printf("Razao: %d\n\n", DataStruct.dutyCycle);
+	printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);
+	printf("Razao: %d\n\n", DataStruct.dutyCycle);
 	//printf("Contador C: %d\n", DataStruct.Contador_C);
 	//printf("Contador BT: %d\n", DataStruct.Contador_BT);
 	
-	// printf("Carregando: %d\n", Dados.mcCharging);
-	// printf("Contador: %d\n\n", Dados.Contador);
+	printf("Tensão L1: %0.3f   Corrente L1: %0.3f", myWattmeter.getFilteredVolts(1), myWattmeter.getFilteredCurrents(1));
+	printf("\nTensão L2: %0.3f   Corrente L3: %0.3f", myWattmeter.getFilteredVolts(2), myWattmeter.getFilteredCurrents(2));
+	printf("\nTensão L3: %0.3f   Corrente L3: %0.3f", myWattmeter.getFilteredVolts(3), myWattmeter.getFilteredCurrents(3));
 
-	// printf("Available: %d\n", Dados.mcAvailable);
-	// printf("Preparing: %d\n", Dados.mcPreparing);
-	// printf("Charging: %d\n\n", Dados.mcCharging);
-	printf("Tensão: %0.3f\n", myWattmeter.getFilteredVolts());
-	printf("Corrente: %0.3f\n", myWattmeter.getFilteredCurrents());
-	printf("Potência: %0.3f\n", myWattmeter.getPowerApparent());
-	printf("Energia: %0.3f\n\n", myWattmeter.getEnergy());
+	printf("\n\nAvailable: %d\n", DataStruct.mcAvailable);
+	printf("Preparing: %d\n", DataStruct.mcPreparing);
+	printf("Charging: %d\n", DataStruct.mcCharging);
+	printf("Finishing: %d\n", DataStruct.mcFinishing);
+	printf("Faulted: %d", DataStruct.mcFaulted);
+	printf("\n-----------------------------------------------------\n");
 }
 
 void stateMachineControl(int state, int dutyCycle){
 	
 	if(dutyCycle!=1023){
-		if(dutyCycle==0 && DataStruct.mcFaulted == false){
+		if(state == -12 && DataStruct.mcFaulted == false){
 			DataStruct.mcFaulted = true;
 		}else{   //razão em 100%
 
@@ -525,4 +529,15 @@ void stateMachineControl(int state, int dutyCycle){
 		DataStruct.mcCharging = false;
 	}
 
+}
+
+bool monitorFaultStatus(){
+	bool stateFault;
+
+	//falha no condicionamento do sinal PWM (melhorar)
+	if(DataStruct.dutyCycle == 1023 && DataStruct.vehicleState == -12){
+		stateFault = true;
+	}else{stateFault = false;}
+
+	return stateFault;
 }

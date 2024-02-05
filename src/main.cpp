@@ -1,5 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
+#define COMPILE_ME
+//#define COMPILE_OCPP
+#define COMPILE_WATT
+
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -8,41 +10,54 @@
 #include "driver/ledc.h"
 #include "esp_err.h"
 #include "esp_adc_cal.h"
-#include "state_machine.h"
 
+#ifdef COMPILE_ME
+#include "state_machine.h"
+#endif
+
+#ifdef COMPILE_OCPP
 #include <Arduino.h>
 #include <WiFi.h>
 #include <MicroOcpp.h>
 #include <MicroOcpp_c.h>
 #include <MicroOcpp/Core/Configuration.h>
-
+#endif
 
 //#include "SparkFun_ACS37800_Arduino_Library.h"
 //#include <Wire.h>
+#ifdef COMPILE_WATT
 #include "wattmeter_sensor.h"
+#include <Wire.h>
+#endif
 
 //ACS37800 wattmeter; // Create an object of the ACS37800 class
-//const int connectorId = 1;
-// DEFINIR PINOS--------------------------------------------------------------------------------------------------
-
+#ifdef COMPILE_OCPP
+const int connectorId = 1;
+#endif
+// DEFINIR PINOS---------------------------------------------------------------------------------
+//DEFINICOES DE PINOS
 #ifdef ESP32_DEV
 gpio_num_t PILOT_PIN = GPIO_NUM_32;		 // Pino para leitura AD do Sinal VA
 gpio_num_t PINO_PROXIMIDADE = GPIO_NUM_33;	 // Pino para leitura AD do do cabo conectado
 gpio_num_t PWM_PIN = GPIO_NUM_15;			 // Pino no qual é gerado o sinal PWM
-gpio_num_t RELE_N = GPIO_NUM_26;			 // Pino de saida, para acionar o Relé do Neutro (N)
-gpio_num_t RELE_L1 = GPIO_NUM_19;			 // Pino de saida, para acionar o Relé da fase 1 (L1)
-gpio_num_t RELE_L2 = GPIO_NUM_21;			 // Pino de saida, para acionar o Relé da fase 2 (L2)
-gpio_num_t RELE_L3 = GPIO_NUM_22;			 // Pino de saida, para acionar o Relé da fase 3 (L3)
-gpio_num_t LED_A = GPIO_NUM_2;				 // Led de EVSE ON/OF
-gpio_num_t LED_B = GPIO_NUM_18;				 // Led de carregamento
-gpio_num_t LED_C = GPIO_NUM_4;				 // Led de conexao a rede Wi-fi
-gpio_num_t LED_D = GPIO_NUM_5;				 // Led de erro ou falha
-gpio_num_t START_RECHARGER_BT = GPIO_NUM_14; // Pino de entrada, para setar o inicio da recarga pela Estacao
+gpio_num_t RELE_N = GPIO_NUM_4;			 // Pino de saida, para acionar o Relé do Neutro (N)
+gpio_num_t RELE_L3 = GPIO_NUM_5;			 // Pino de saida, para acionar o Relé da fase 1 (L1)
+gpio_num_t RELE_L2 = GPIO_NUM_18;			 // Pino de saida, para acionar o Relé da fase 2 (L2)
+gpio_num_t RELE_L1 = GPIO_NUM_19;			 // Pino de saida, para acionar o Relé da fase 3 (L3)
+gpio_num_t LED_A = GPIO_NUM_12;				 // Led de EVSE ON/OF
+gpio_num_t LED_B = GPIO_NUM_2;				 // Led de carregamento
+gpio_num_t LED_C = GPIO_NUM_14;				 // Led de conexao a rede Wi-fi
+gpio_num_t LED_D = GPIO_NUM_27;				 // Led de erro ou falha
+gpio_num_t START_RECHARGER_BT = GPIO_NUM_23; // Pino de entrada, para setar o inicio da recarga pela Estacao
+adc1_channel_t CHANNEL_PILOT = ADC1_CHANNEL_4;
+adc1_channel_t CHANNEL_PROXIMIDADE = ADC1_CHANNEL_5;
+
+#define SPEED_MODE_TIMER LEDC_HIGH_SPEED_MODE
 #define PIN_SDA 21
 #define PIN_SCL 22
-#define SPEED_MODE_TIMER LEDC_HIGH_SPEED_MODE
 #endif
 
+//DEFINICOES DE PINOS
 #ifdef ESP32_S3
 gpio_num_t PILOT_PIN = GPIO_NUM_8;
 gpio_num_t PINO_PROXIMIDADE = GPIO_NUM_7;
@@ -58,62 +73,81 @@ gpio_num_t LED_B = GPIO_NUM_10;	// O LEDB(Estado 9), piscando (Carregando)
 gpio_num_t LED_C = GPIO_NUM_2;	
 gpio_num_t LED_D = GPIO_NUM_18; 
 gpio_num_t START_RECHARGER_BT = GPIO_NUM_9;
-#define SPEED_MODE_TIMER LEDC_LOW_SPEED_MODE // LEDC_LOW_MODE_MAX
+adc1_channel_t CHANNEL_PILOT = ADC1_CHANNEL_7;
+adc1_channel_t CHANNEL_PROXIMIDADE = ADC1_CHANNEL_6;
+
+#define SPEED_MODE_TIMER LEDC_LOW_SPEED_MODE;
 #define PIN_SDA 42
 #define PIN_SCL 39
+
 #endif
-// DEFINIR VARIAVEIS--------------------------------------------------------------------------------------------
+
+// DEFINIR VARIAVEIS ME-----------------------------------------------------------------------------
+#ifdef COMPILE_ME 
 static ledc_channel_config_t ledc_channel;
 static esp_adc_cal_characteristics_t adc_chars; // Fornecido pela Esressif para calibracao do ADC
 int Razao_Ciclica_PWM = 1023;					// Variavel que armazena valor da razao cicllica
 
+// FUNCAO DE INTERRUPCAO DA ME
+void timer_callback(void *param)
+{
+	// static bool teste_freq = false;
+	// teste_freq = !teste_freq;
+	// gpio_set_level(GPIO_NUM_23, teste_freq); 
+	Razao_Ciclica_PWM = funcaoInterrupcao();
+	ESP_ERROR_CHECK(ledc_set_duty(SPEED_MODE_TIMER, LEDC_CHANNEL_0, Razao_Ciclica_PWM));
+	ESP_ERROR_CHECK(ledc_update_duty(SPEED_MODE_TIMER, LEDC_CHANNEL_0));
+}
+#endif
+
 // TASK DO WATTIMETRO
+#ifdef COMPILE_WATT
 void wattmeterTask(void *pvParameters) {
-    int cont = 0;
+    int cont_pot = 0;
+		int cont_print = 0;
+	
 		while (1) {
         myWattmeter.showRMSvalues();
-        cont++;
-    
-        if(cont==1000){
+        cont_pot++;
+				cont_print++;
+  
+        if(cont_pot==1000){
           myWattmeter.calculateEnergy(); 
-          cont = 0;
+          cont_pot = 0;
         }
         // UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
         // Serial.print("Espaço livre mínimo da pilha: ");
         // Serial.println(uxHighWaterMark);
 
-        vTaskDelay(pdMS_TO_TICKS(10)); // Espera por 10 segundos
+        vTaskDelay(pdMS_TO_TICKS(10)); // Espera por 10 ms
     }
 }
+#endif
 
-// FUNCAO DE INTERRUPCAO DA ME
-void timer_callback(void *param)
-{
-	Razao_Ciclica_PWM = funcaoInterrupcao();
-	ESP_ERROR_CHECK(ledc_set_duty(SPEED_MODE_TIMER, LEDC_CHANNEL_0, Razao_Ciclica_PWM));
-	ESP_ERROR_CHECK(ledc_update_duty(SPEED_MODE_TIMER, LEDC_CHANNEL_0));
-}
 
 // ############### OCPP
-//const char *OCPP_BACKEND_URL = "ws://200.18.45.173:7589"; //servidor
-// const char *OCPP_BACKEND_URL = "ws://192.168.113.1:8089"; //pc henrique
-// const char *OCPP_CHARGE_BOX_ID = "IntrallWallbox";
+#ifdef COMPILE_OCPP
+const char *OCPP_BACKEND_URL = "ws://200.18.45.173:7589"; //servidor
+const char *OCPP_BACKEND_URL = "ws://192.168.113.1:8089"; //pc henrique
+const char *OCPP_CHARGE_BOX_ID = "IntrallWallbox";
 
-// const char *ssid = "Galaxy_M51";
-// const char *password = "testeesp";
+const char *ssid = "Galaxy_M51";
+const char *password = "testeesp";
 
-// bool isEvConnected()
-// {
-//     return true; 
-// }
+bool isEvConnected()
+{
+    return true; 
+}
 
-// bool isEvNotConnected()
-// {
-//     return false; 
-// }
+bool isEvNotConnected()
+{
+    return false; 
+}
+#endif
 
 void setup()
 {
+#ifdef COMPILE_WATT
 	config_wattmeter my_config = {
 		.pinscl = PIN_SCL,  
     .pinsda = PIN_SDA,   
@@ -127,20 +161,23 @@ void setup()
 	};
 
 	myWattmeter.initWattmeter(my_config);
+#endif
 
+#ifdef COMPILE_OCPP
+		Serial.print(F("[main] Wait for WiFi: "));
 
-		//Serial.print(F("[main] Wait for WiFi: "));
+    WiFi.begin(ssid, password);
+		if(WiFi.status() == WL_CONNECTED) Serial.print(F("Conected\n"));
+		    WiFi.begin(ssid, password);
+    while (!WiFi.isConnected())
+    {
+        Serial.print('.');
+        delay(1000);
+     }
+		Serial.print(F("Connected.\n"));
+#endif
 
-    // WiFi.begin(ssid, password);
-		// if(WiFi.status() == WL_CONNECTED) Serial.print(F("Conected\n"));
-		  //   WiFi.begin(ssid, password);
-    // while (!WiFi.isConnected())
-    // {
-    //     Serial.print('.');
-    //     delay(1000);
-    //  }
-		// Serial.print(F("Connected.\n"));
-		
+#ifdef COMPILE_ME
 	DataStruct.currentSetByUser = 32; // Valor de corrente externo usuario/APP/OCPP
 	DataStruct.startChargingByUser = 0;	 // valor alterado para iniciar ou encerrar recarga usuario/APP/OCPP
 
@@ -160,8 +197,8 @@ void setup()
 	// CONFIGURA OS CANAIS ADC ---------------------------------------------------------------------------
 	esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_12Bit, 0, &adc_chars);
 	adc1_config_width(ADC_WIDTH_12Bit);
-	adc1_config_channel_atten(ADC1_CHANNEL_7, ADC_ATTEN_DB_11);  //pino CP
-	adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);  //pino PP
+	adc1_config_channel_atten(CHANNEL_PILOT, ADC_ATTEN_DB_11);  //pino CP
+	adc1_config_channel_atten(CHANNEL_PROXIMIDADE, ADC_ATTEN_DB_11);  //pino PP
 
 	// CONFIGURA NEW PWM
 	ledc_timer_config_t ledc_timer = {
@@ -187,43 +224,51 @@ void setup()
 	esp_timer_handle_t timer_handler;
 	ESP_ERROR_CHECK(esp_timer_create(&my_timer_args, &timer_handler));
 	ESP_ERROR_CHECK(esp_timer_start_periodic(timer_handler, 167)); // 167 u,f= 6kHz P/ler 6 amostras de um ciclo PWM
+#endif
 
-	// mocpp_initialize(OCPP_BACKEND_URL, OCPP_CHARGE_BOX_ID, "Intral Wallbox", "Intral");
+#ifdef COMPILE_OCPP
+	mocpp_initialize(OCPP_BACKEND_URL, OCPP_CHARGE_BOX_ID, "Intral Wallbox", "Intral");
 
-	// setEnergyMeterInput([]()
-	// 					{ return 10.f; });
+	setEnergyMeterInput([]()
+						{ return 10.f; });
 
-	// setSmartChargingCurrentOutput([](float limit)
-	// 							  {
-	//       Serial.printf("[main] Smart Charging allows maximum charge rate: %.0f A\n", limit);
-	//       return 32.f; },
-	// 							  connectorId);
+	setSmartChargingCurrentOutput([](float limit)
+								  {
+	      Serial.printf("[main] Smart Charging allows maximum charge rate: %.0f A\n", limit);
+	      return 32.f; },
+								  connectorId);
+#endif
 
+#ifdef COMPILE_WATT
 	xTaskCreate(wattmeterTask, "Wattmeter Task", 10000, NULL, 1, NULL);
-	// Serial.print(F("fim\n "));
+#endif
 }
 
 
 void loop()
 {
-	// mocpp_loop();
-	// if (DataStruct.mcAvailable)
-	// {
-	// 	setConnectorPluggedInput(isEvNotConnected, connectorId);
-	// }
+	
+#ifdef COMPILE_OCPP
+	mocpp_loop();
+	if (DataStruct.mcAvailable)
+	{
+		setConnectorPluggedInput(isEvNotConnected, connectorId);
+	}
 
-	// if (DataStruct.mcPreparing)
-	// {
-	// 	setConnectorPluggedInput(isEvConnected, connectorId);
-	// }
+	if (DataStruct.mcPreparing)
+	{
+		setConnectorPluggedInput(isEvConnected, connectorId);
+	}
 
-	// if (DataStruct.mcCharging)
-	// {
-	// 	startTransaction("12345");
-	// }
+	if (DataStruct.mcCharging)
+	{
+		startTransaction("12345");
+	}
 
-	// if (DataStruct.mcFinishing)
-	// {
-	// 	stopTransaction();
-	// }
+	if (DataStruct.mcFinishing)
+	{
+		stopTransaction();
+	}
+#endif
+
 }

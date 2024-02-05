@@ -18,6 +18,9 @@ extern gpio_num_t LED_B; // Led de carregamento
 extern gpio_num_t LED_C; // Led de conexao a rede Wi-fi
 extern gpio_num_t LED_D; // Led de erro ou falha
 
+extern adc1_channel_t CHANNEL_PILOT; //Configuração do canal ADC para o CP
+extern adc1_channel_t CHANNEL_PROXIMIDADE; //Configuração do canal ADC para o PP
+
 // Definição da estrutura global
 struct GlobalStruct
 {
@@ -76,5 +79,6 @@ void leBotao();
 void dispositivoDeManobra(int acao);
 void printTela();
 void stateMachineControl(int state, int dutyCycle);
+bool monitorFaultStatus();
 
 #endif

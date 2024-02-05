@@ -7,6 +7,10 @@ const int UNDER_VOLTAGE_DEFAULT = 5;
 const int OVER_VOLTAGE_DEFAULT = 4;
 const int OVER_CURRENT_DEFAULT = 13;
 
+const uint8_t ADDRESS_L1_DEFAULT = 0x63;
+const uint8_t ADDRESS_L2_DEFAULT = 0X6C;
+const uint8_t ADDRESS_L3_DEFAULT = 0X60;
+
 struct config_wattmeter
 {
     int pinscl;             // SCL pin
@@ -22,6 +26,10 @@ struct config_wattmeter
 
 class WattmeterSensor{
 private:
+    uint8_t ADRESS_L1 = ADDRESS_L1_DEFAULT;
+    uint8_t ADRESS_L2 = ADDRESS_L2_DEFAULT;
+    uint8_t ADRESS_L3 = ADDRESS_L3_DEFAULT;
+;
     int numSamples = NUM_SAMPLES_DEFAULT;                   // Number of samples for averaging
     int numSamplescurrents = NUM_SAMPLES_CURRENTS_DEFAULT;  // Number of samples for averaging 
     int UnderVoltage = UNDER_VOLTAGE_DEFAULT;               // UnderVoltage variable
@@ -31,8 +39,12 @@ private:
     int currentIndexcurrents = 0;            // Current index in the buffer
     int c = 0;                               // Counter used in the loop function
 
-    float filteredVolts;                    // Filtered value of voltage
-    float filteredCurrents;                 // Filtered value of current
+    float filteredVoltsL1;                    // Filtered value of voltage
+    float filteredVoltsL2; 
+    float filteredVoltsL3; 
+    float filteredCurrentsL1;                 // Filtered value of current
+    float filteredCurrentsL2;
+    float filteredCurrentsL3;
     float PowerApparent;                    // Variable that receives the value of the apparent power
     float PowerActive;                      // Variable that receives the value of the active power
     float energy;                           // Variable to store the accumulated energy in kWh        
@@ -46,8 +58,8 @@ private:
     bool currentAboveThreshold = false;      // Auxiliary variable to track if current is above the threshold
     bool voltageAboveHighThreshold = false;  // Auxiliary variable to track if voltage is above the high threshold
 public:
-    void updateFilteredVolts(float newValue);
-    void updateFilteredCurrents(float newValue);
+    void updateFilteredVolts(float vL1, float vL2, float vL3);
+    void updateFilteredCurrents(float aL1, float aL2, float aL3);
     void PowerReactiveandActive();
     void showRMSvalues();
     void calculateEnergy();
@@ -59,10 +71,10 @@ public:
     void setOverVoltage(int newOverVoltage);
     void setOverCurrent(int newOverCurrent);
     
-    float getFilteredVolts() const;
-    float getFilteredCurrents() const; 
-    float getPowerApparent() const;
-    float getEnergy() const;
+    float getFilteredVolts(int line) ;
+    float getFilteredCurrents(int line) ; 
+    float getPowerApparent() ;
+    float getEnergy() ;
 };
 
 extern WattmeterSensor myWattmeter;
