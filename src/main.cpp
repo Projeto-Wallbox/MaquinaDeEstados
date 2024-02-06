@@ -153,8 +153,8 @@ void setup()
     .pinsda = PIN_SDA,   
     .senseRes = 3000,
     .DividerRes = 4000000,
-    .numsamples = 50,      
-    .numsamplescurrents = 50, 
+    .numsamples = 200,      
+    .numsamplescurrents = 200, 
     .undervoltage = 5,
     .overvoltage = 4, 
     .overcurrent= 13,
@@ -193,6 +193,8 @@ void setup()
 	gpio_set_direction(RELE_L2, GPIO_MODE_OUTPUT);			 // Define pino como saida
 	gpio_set_direction(RELE_L3, GPIO_MODE_OUTPUT);			 // Define pino como saida
 	gpio_set_direction(START_RECHARGER_BT, GPIO_MODE_INPUT); // Define pino como entrada
+	
+	gpio_set_direction(GPIO_NUM_13, GPIO_MODE_INPUT); // Define pino como entrada teste Fault
 
 	// CONFIGURA OS CANAIS ADC ---------------------------------------------------------------------------
 	esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_12Bit, 0, &adc_chars);
@@ -247,7 +249,6 @@ void setup()
 
 void loop()
 {
-	
 #ifdef COMPILE_OCPP
 	mocpp_loop();
 	if (DataStruct.mcAvailable)
@@ -270,5 +271,6 @@ void loop()
 		stopTransaction();
 	}
 #endif
+	
 
 }

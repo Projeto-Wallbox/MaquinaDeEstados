@@ -6,12 +6,15 @@
 #include "esp_adc_cal.h"
 #include "state_machine.h"
 #include "wattmeter_sensor.h"
+#include <Wire.h>  //Teste para plot
+
 
 GlobalStruct DataStruct; //Inicializa estrutura de dados (VER MELHOR FORMA)
 
 //Funcao que deve ser chamada na Interrupcao
 int funcaoInterrupcao()
-{ // Esta funcao e chamada a cada 16,6 us
+{ 
+	// Esta funcao e chamada a cada 16,6 us
 	// Variaveis para os contadores das interrupcoes
 	static int cont_principal = 0;
 	static int cont_atualiza = 0;
@@ -74,15 +77,15 @@ int funcaoInterrupcao()
 			DataStruct.Media_Piloto = media_piloto;
 			DataStruct.Ad_Proximidade = medida_proximidade;
 			DataStruct.vehicleState = estado_veiculo;
-
 			cont_atualiza = 0;
+
 		}
 		else
 		{
 			if (cont_interfaceUsuario >= 6000) // a cada 1000 ms (1 Hz)
 			{ 
 				acendeLed();
-				printTela();
+				//printTela();
 				cont_interfaceUsuario = 0;
 			}
 		}
@@ -290,7 +293,7 @@ int chargingStationMain(int estado, int corrente_max)
 	static bool bloqueio_razao_ciclica=false;		//Variável que bloqueia a alteração da razão cíclica por 5 segundos
 	static bool iniciar_recarga=false;					//Variável para autorizar o inicio de recarga
 
-	//estado_F = monitorFaultStatus();
+	estado_F = monitorFaultStatus();
 	iniciar_recarga = DataStruct.startChargingByUser;
 	DataStruct.Contador_C = cont;
 	DataStruct.mcCharging = estadoDispositivoManobra;
@@ -467,42 +470,45 @@ void dispositivoDeManobra(int acao){
 //Funcao auxiliar só para printar na tela (Temporária)
 void printTela(){
 	printf("Estado: %d\n", DataStruct.vehicleState);
-	printf("AD CP: %d\n\n", DataStruct.Media_Piloto);
+	// printf("AD CP: %d\n\n", DataStruct.Media_Piloto);
 	
 	printf("Cabo: %d\n", DataStruct.cableCurrent);
-	printf("AD PP: %d\n\n", DataStruct.Ad_Proximidade);
+	// printf("AD PP: %d\n\n", DataStruct.Ad_Proximidade);
 	// printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
 	// printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
 	
 	printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);
-	printf("Razao: %d\n\n", DataStruct.dutyCycle);
+	printf("Razao: %0.2f %%\n\n", static_cast<float>((DataStruct.dutyCycle*100)/1023.0f));
+	// printf("%");
 	//printf("Contador C: %d\n", DataStruct.Contador_C);
 	//printf("Contador BT: %d\n", DataStruct.Contador_BT);
 	
 	printf("Tensão L1: %0.3f   Corrente L1: %0.3f", myWattmeter.getFilteredVolts(1), myWattmeter.getFilteredCurrents(1));
-	printf("\nTensão L2: %0.3f   Corrente L3: %0.3f", myWattmeter.getFilteredVolts(2), myWattmeter.getFilteredCurrents(2));
+	printf("\nTensão L2: %0.3f   Corrente L2: %0.3f", myWattmeter.getFilteredVolts(2), myWattmeter.getFilteredCurrents(2));
 	printf("\nTensão L3: %0.3f   Corrente L3: %0.3f", myWattmeter.getFilteredVolts(3), myWattmeter.getFilteredCurrents(3));
 
 	printf("\n\nAvailable: %d\n", DataStruct.mcAvailable);
 	printf("Preparing: %d\n", DataStruct.mcPreparing);
 	printf("Charging: %d\n", DataStruct.mcCharging);
 	printf("Finishing: %d\n", DataStruct.mcFinishing);
-	printf("Faulted: %d", DataStruct.mcFaulted);
+	printf("Faulted: %d\n", DataStruct.mcFaulted);
+	printf("Tipo de falha: %s", DataStruct.typeError.c_str());
+
+
 	printf("\n-----------------------------------------------------\n");
 }
 
 void stateMachineControl(int state, int dutyCycle){
-	
-	if(dutyCycle!=1023){
-		if(state == -12 && DataStruct.mcFaulted == false){
-			DataStruct.mcFaulted = true;
-		}else{   //razão em 100%
-
-			DataStruct.mcFaulted = false;
-		}
+	if(state == -12 ||state == 0){ //if(state == -12 && DataStruct.mcFaulted == false)
+		DataStruct.mcFaulted=true;
+		DataStruct.mcAvailable=false;
+		DataStruct.mcPreparing=false;
+		DataStruct.mcFinishing=false;
+	}else{   //razão em 100%
+		DataStruct.mcFaulted = false;
 	}
-
-	if(state == 12 && dutyCycle == 1023 && DataStruct.mcAvailable == false){
+	
+	if(state == 12 && dutyCycle == 1023){  //&& DataStruct.mcAvailable == false
 		DataStruct.mcAvailable = true;
 		DataStruct.historyState = 12;
 		DataStruct.mcPreparing=false;
@@ -534,10 +540,28 @@ void stateMachineControl(int state, int dutyCycle){
 bool monitorFaultStatus(){
 	bool stateFault;
 
-	//falha no condicionamento do sinal PWM (melhorar)
+	if(DataStruct.vehicleState==12||DataStruct.vehicleState==9||DataStruct.vehicleState==6||DataStruct.vehicleState==3){
+		stateFault = false;
+		DataStruct.typeError = "----";
+	}
+
+	// Falha no condicionamento do sinal PWM (melhorar)
 	if(DataStruct.dutyCycle == 1023 && DataStruct.vehicleState == -12){
 		stateFault = true;
-	}else{stateFault = false;}
+		DataStruct.typeError = "Falha no condicionamento do PWM";
+	}else{
+		stateFault = false;
+	}
 
+	// Curto entre CP e PE
+	if(DataStruct.dutyCycle == 1023 && DataStruct.vehicleState == 0){
+		DataStruct.typeError = "Curto entre CP e PE";
+	}
+	
+	// Sobretensão
+
+	// Subtensão
+
+	//
 	return stateFault;
 }

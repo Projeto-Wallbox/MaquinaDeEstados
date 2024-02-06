@@ -1,6 +1,8 @@
 #ifndef MAQUINA_DE_ESTADOS_H
 #define MAQUINA_DE_ESTADOS_H
 #include "driver/gpio.h"
+#include <iostream>
+#include <string.h>
 
 extern gpio_num_t PILOT_PIN;      // Pino para leitura AD do Sinal VA
 extern gpio_num_t PINO_PROXIMIDADE; // Pino para leitura AD do do cabo conectado
@@ -57,13 +59,8 @@ struct GlobalStruct
     int Bt_Estado;
     int newState;
 
-    // Variaveis para leitura do Wattimetro
-    float wVoltage = 0;
-    float wCurrent = 0;
-    float instaVoltage = 0;
-    float instaCurrent = 0;
-    float powerApparent = 0;
-    float energy = 0;
+    //Parte para falhas
+    std::string typeError = "---";
 };
 
 // Declaração da variável global

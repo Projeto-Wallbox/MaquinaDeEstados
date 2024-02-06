@@ -1,6 +1,8 @@
 #include "SparkFun_ACS37800_Arduino_Library.h" 
 #include <Wire.h>
 #include "wattmeter_sensor.h"
+#include <vector>
+
 
 ACS37800 mySensor;            // Create an object of the ACS37800 class
 WattmeterSensor myWattmeter;  // Create an object of the WattmeterSensor class
@@ -8,20 +10,33 @@ WattmeterSensor myWattmeter;  // Create an object of the WattmeterSensor class
 // Calculation of the average of the last samples (numSamples) stored in voltsBuffer[]
 void WattmeterSensor::updateFilteredVolts(float vL1, float vL2, float vL3)
 {
-  float voltsBufferL1[numSamples];           // Buffer to store the last samples of voltage values
-  float voltsBufferL2[numSamples]; 
-  float voltsBufferL3[numSamples]; 
+  // static float voltsBufferL1[numSamples];           // Buffer to store the last samples of voltage values
+  // static float voltsBufferL2[numSamples]; 
+  // static float voltsBufferL3[numSamples]; 
+  static std::vector<float> voltsBufferL1(numSamples);
+  static std::vector<float> voltsBufferL2(numSamples); 
+  static std::vector<float> voltsBufferL3(numSamples); 
+    
+  voltsBufferL1[currentIndex] = vL1;
+  voltsBufferL2[currentIndex] = vL2;
+  voltsBufferL3[currentIndex] = vL3;
+
+  currentIndex = (currentIndex + 1) % numSamples;
+
+  // Calculate the average of the samples in the buffer
+  float sumL1 = 0.0;
+  float sumL2 = 0.0;
+  float sumL3 = 0.0;
   
-  // voltsBuffer[currentIndex] = newValue;
-  // currentIndex = (currentIndex + 1) % numSamples;
-
-  // // Calculate the average of the samples in the buffer
-  // float sum = 0.0;
-  // for (int i = 0; i < numSamples; ++i) {
-  //   sum += voltsBuffer[i];
-  // }
-  // filteredVolts = sum / numSamples;
-
+  for (int i = 0; i < numSamples; ++i) {
+    sumL1 += voltsBufferL1[i];
+    sumL2 += voltsBufferL2[i];
+    sumL3 += voltsBufferL3[i];
+  }
+  filteredVoltsL1 = sumL1 / numSamples;    // Filtered value of voltage
+  filteredVoltsL2 = sumL2 / numSamples;
+  filteredVoltsL3 = sumL3 / numSamples;
+  
   // // Check if the filteredVolts is below 201 for more than 5 consecutive samples
   // if (filteredVolts < 201)
   // {
@@ -46,17 +61,31 @@ void WattmeterSensor::updateFilteredVolts(float vL1, float vL2, float vL3)
 // Calculate the average of the last samples (numSamplescurrents) stored in currentBuffer[]
 void WattmeterSensor::updateFilteredCurrents(float aL1, float aL2, float aL3) 
 {
-  // float currentBuffer[numSamplescurrents];         // Buffer to store the last samples of current values
+  float currentBufferL1[numSamplescurrents];         // Buffer to store the last samples of current values
+  float currentBufferL2[numSamplescurrents];
+  float currentBufferL3[numSamplescurrents];
 
-  // currentBuffer[currentIndexcurrents] = newValue;
-  // currentIndexcurrents = (currentIndexcurrents + 1) % numSamplescurrents;
+  currentBufferL1[currentIndexcurrents] = aL1;
+  currentBufferL2[currentIndexcurrents] = aL2;
+  currentBufferL3[currentIndexcurrents] = aL3;
 
-  // // Calculate the average of the samples in the buffer
-  // float sumc = 0.0;
-  // for (int i = 0; i < numSamplescurrents; ++i) {
-  //   sumc += currentBuffer[i];
-  // }
-  // filteredCurrentsL1 = sumc / numSamplescurrents;
+  currentIndexcurrents = (currentIndexcurrents + 1) % numSamplescurrents;
+
+  // Calculate the average of the samples in the buffer
+  float sumcL1 = 0.0;
+  float sumcL2 = 0.0;
+  float sumcL3 = 0.0;
+
+  for (int i = 0; i < numSamplescurrents; ++i) {
+    sumcL1 += currentBufferL1[i];
+    sumcL2 += currentBufferL2[i];
+    sumcL3 += currentBufferL3[i];
+
+  }
+  filteredCurrentsL1 = sumcL1 / numSamplescurrents;
+  filteredCurrentsL2 = sumcL2 / numSamplescurrents;
+  filteredCurrentsL3 = sumcL3 / numSamplescurrents;
+
 
   // // Check if the filteredCurrents is above 32 for more than 5 consecutive samples
   // if (filteredCurrents > 32)
@@ -112,27 +141,23 @@ void WattmeterSensor::showRMSvalues()
   Wire.endTransmission();
 
   //realizar o filtro
-  updateFilteredVolts(voltsL1, voltsL2, voltsL3);
-  updateFilteredCurrents(ampsL1, ampsL2, ampsL3);
+  updateFilteredVolts(voltsL1, voltsL2, voltsL3*1.266);
+  // updateFilteredCurrents(ampsL1, ampsL2, ampsL3);
 
-  //ai nao precisa esta parte de baixo, pois tem updateFilteredVolts(voltsfiltred);
-  filteredVoltsL1 = voltsL1;
-  filteredVoltsL2 = voltsL2;
-  filteredVoltsL3 = voltsL3;
-  filteredCurrentsL1 = ampsL1;
-  filteredCurrentsL2 = ampsL2;
-  filteredCurrentsL3 = ampsL3;
+  Serial.print(">L1Filter:");
+  Serial.println(filteredVoltsL1);
+  Serial.print(">L2Filter:");
+  Serial.println(filteredVoltsL2);
+  Serial.print(">L3Filter:");
+  Serial.println(filteredVoltsL3);
 
-  // float volts = 0;
-  // float amps = 0;
+  Serial.print(">voltsL1:");
+  Serial.println(voltsL1);
+  Serial.print(">voltsL2:");
+  Serial.println(voltsL2);
+  Serial.print(">voltsL3:");
+  Serial.println(voltsL3);
 
-  // mySensor.readRMS(&volts, &amps);
-
-  // float voltsfiltred = volts * 1;
-  // float ampsfiltred = amps * 1;
-  
-  
- 
   // PowerApparent = filteredCurrents * filteredVolts;
 }
 
@@ -144,7 +169,7 @@ void WattmeterSensor::calculateEnergy() {
 // Configuration and initialization of I2C communication and the ACS37800 Sensor
 void WattmeterSensor::initWattmeter(config_wattmeter &params){
     numSamples = params.numsamples;    
-    numSamplescurrents= params.numsamplescurrents;
+    numSamplescurrents = params.numsamplescurrents;
     UnderVoltage = params.undervoltage; 
     OverVoltage = params.overvoltage;
     OverCurrent = params.overcurrent;
@@ -162,8 +187,8 @@ void WattmeterSensor::initWattmeter(config_wattmeter &params){
       Serial.print(F("ACS37800 not detected. Check connections and I2C address. Freezing..."));
     }
 
-    //mySensor.setBypassNenable(true, true);
-    mySensor.setNumberOfSamples(1023, true);
+    mySensor.setBypassNenable(false, true);
+    // mySensor.setNumberOfSamples(1023, true);
     mySensor.setSenseRes(params.senseRes);
     mySensor.setDividerRes(params.DividerRes);
 
@@ -219,15 +244,15 @@ float WattmeterSensor::getFilteredVolts(int line) {
 float WattmeterSensor::getFilteredCurrents(int line) {
   float currentFilter;
   if(line==1){
-    currentFilter = filteredVoltsL1;
+    currentFilter = filteredCurrentsL1;
   }
 
   if(line==2){
-    currentFilter = filteredVoltsL2;
+    currentFilter = filteredCurrentsL2;
   }
 
   if(line==3){
-    currentFilter = filteredVoltsL3;
+    currentFilter = filteredCurrentsL3;
   }
 
   return currentFilter;
