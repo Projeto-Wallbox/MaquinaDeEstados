@@ -1,6 +1,7 @@
 #define COMPILE_ME
 //#define COMPILE_OCPP
-#define COMPILE_WATT
+//#define COMPILE_WATT
+#define COMPILE_D_RES_CURR
 
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -44,14 +45,18 @@ gpio_num_t RELE_N = GPIO_NUM_4;			 // Pino de saida, para acionar o Relé do Neu
 gpio_num_t RELE_L3 = GPIO_NUM_5;			 // Pino de saida, para acionar o Relé da fase 1 (L1)
 gpio_num_t RELE_L2 = GPIO_NUM_18;			 // Pino de saida, para acionar o Relé da fase 2 (L2)
 gpio_num_t RELE_L1 = GPIO_NUM_19;			 // Pino de saida, para acionar o Relé da fase 3 (L3)
-gpio_num_t LED_A = GPIO_NUM_12;				 // Led de EVSE ON/OF
+gpio_num_t LED_A = GPIO_NUM_26;				 // Led de EVSE ON/OF
 gpio_num_t LED_B = GPIO_NUM_2;				 // Led de carregamento
 gpio_num_t LED_C = GPIO_NUM_14;				 // Led de conexao a rede Wi-fi
 gpio_num_t LED_D = GPIO_NUM_27;				 // Led de erro ou falha
 gpio_num_t START_RECHARGER_BT = GPIO_NUM_23; // Pino de entrada, para setar o inicio da recarga pela Estacao
 adc1_channel_t CHANNEL_PILOT = ADC1_CHANNEL_4;
 adc1_channel_t CHANNEL_PROXIMIDADE = ADC1_CHANNEL_5;
+adc1_channel_t CHANNEL_FAULT = ADC1_CHANNEL_6;
 
+gpio_num_t PIN_FAULT = GPIO_NUM_34;
+gpio_num_t PIN_TRIG_DC = GPIO_NUM_12;
+gpio_num_t PIN_TRIG_AC = GPIO_NUM_13;
 #define SPEED_MODE_TIMER LEDC_HIGH_SPEED_MODE
 #define PIN_SDA 21
 #define PIN_SCL 22
@@ -100,6 +105,31 @@ void timer_callback(void *param)
 }
 #endif
 
+#ifdef COMPILE_D_RES_CURR
+void monitorCurrentTask(void *pvParameters) {	
+		while (1) {
+			int adPinFault = adc1_get_raw(CHANNEL_FAULT); 
+  		DataStruct.statePinDC = gpio_get_level(PIN_TRIG_DC);
+  		DataStruct.statePinAC = gpio_get_level(PIN_TRIG_AC);
+
+			// Serial.print(">adPinFault: ");
+			// Serial.println(adPinFault);
+
+			// Serial.print(">statePinDC: ");
+			// Serial.println(DataStruct.statePinDC);
+
+			// Serial.print(">statePinAC: ");
+			// Serial.println(DataStruct.statePinAC);
+			
+			// UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+			// Serial.print("Espaço livre mínimo da pilha: ");
+			// Serial.println(uxHighWaterMark);
+
+        vTaskDelay(pdMS_TO_TICKS(100)); // Espera por 100 ms
+    }
+}
+#endif
+
 // TASK DO WATTIMETRO
 #ifdef COMPILE_WATT
 void wattmeterTask(void *pvParameters) {
@@ -123,7 +153,6 @@ void wattmeterTask(void *pvParameters) {
     }
 }
 #endif
-
 
 // ############### OCPP
 #ifdef COMPILE_OCPP
@@ -194,13 +223,13 @@ void setup()
 	gpio_set_direction(RELE_L3, GPIO_MODE_OUTPUT);			 // Define pino como saida
 	gpio_set_direction(START_RECHARGER_BT, GPIO_MODE_INPUT); // Define pino como entrada
 	
-	gpio_set_direction(GPIO_NUM_13, GPIO_MODE_INPUT); // Define pino como entrada teste Fault
-
 	// CONFIGURA OS CANAIS ADC ---------------------------------------------------------------------------
 	esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_12Bit, 0, &adc_chars);
 	adc1_config_width(ADC_WIDTH_12Bit);
 	adc1_config_channel_atten(CHANNEL_PILOT, ADC_ATTEN_DB_11);  //pino CP
 	adc1_config_channel_atten(CHANNEL_PROXIMIDADE, ADC_ATTEN_DB_11);  //pino PP
+	adc1_config_channel_atten(CHANNEL_FAULT, ADC_ATTEN_DB_11);  //pino PP
+
 
 	// CONFIGURA NEW PWM
 	ledc_timer_config_t ledc_timer = {
@@ -228,6 +257,13 @@ void setup()
 	ESP_ERROR_CHECK(esp_timer_start_periodic(timer_handler, 167)); // 167 u,f= 6kHz P/ler 6 amostras de um ciclo PWM
 #endif
 
+#ifdef COMPILE_D_RES_CURR
+gpio_set_direction(PIN_FAULT, GPIO_MODE_INPUT);
+gpio_set_direction(PIN_TRIG_AC, GPIO_MODE_INPUT);
+gpio_set_direction(PIN_TRIG_AC, GPIO_MODE_INPUT);
+adc1_config_channel_atten(CHANNEL_FAULT, ADC_ATTEN_DB_11); 
+#endif
+
 #ifdef COMPILE_OCPP
 	mocpp_initialize(OCPP_BACKEND_URL, OCPP_CHARGE_BOX_ID, "Intral Wallbox", "Intral");
 
@@ -243,6 +279,10 @@ void setup()
 
 #ifdef COMPILE_WATT
 	xTaskCreate(wattmeterTask, "Wattmeter Task", 10000, NULL, 1, NULL);
+#endif
+
+#ifdef COMPILE_D_RES_CURR
+//	xTaskCreate(monitorCurrentTask, "Wattmeter Task", 10000, NULL, 2, NULL);
 #endif
 }
 

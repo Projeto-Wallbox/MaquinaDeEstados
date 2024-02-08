@@ -1,4 +1,5 @@
 //***** Bibliotecas *****//	
+#include <Arduino.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "driver/gpio.h"
@@ -37,12 +38,15 @@ int funcaoInterrupcao()
 	cont_interfaceUsuario++;
 
 	// a cada 166 us (6kHz)
+	DataStruct.statePinDC = gpio_get_level(PIN_TRIG_DC);
+  DataStruct.statePinAC = gpio_get_level(PIN_TRIG_AC);
+
 	medida_piloto = adc1_get_raw(CHANNEL_PILOT);	 // Leitura do piloto (1).																			
 	media_piloto = positivaPiloto(medida_piloto); // Calcula a média dos sinais (2)
 	DataStruct.vehicleState = estado_veiculo;  //atualiza estado na struct
-
+	monitorFaultStatus();
 	stateMachineControl(estado_veiculo, razao_ciclica);
-
+	
 	if (cont_principal >= 6) // a cada 1 ms (1kHz)
 	{
 		//TESTE DE LEITURA DO ESTADO E0
@@ -85,7 +89,7 @@ int funcaoInterrupcao()
 			if (cont_interfaceUsuario >= 6000) // a cada 1000 ms (1 Hz)
 			{ 
 				acendeLed();
-				//printTela();
+				printTela();
 				cont_interfaceUsuario = 0;
 			}
 		}
@@ -293,7 +297,7 @@ int chargingStationMain(int estado, int corrente_max)
 	static bool bloqueio_razao_ciclica=false;		//Variável que bloqueia a alteração da razão cíclica por 5 segundos
 	static bool iniciar_recarga=false;					//Variável para autorizar o inicio de recarga
 
-	estado_F = monitorFaultStatus();
+	
 	iniciar_recarga = DataStruct.startChargingByUser;
 	DataStruct.Contador_C = cont;
 	DataStruct.mcCharging = estadoDispositivoManobra;
@@ -397,7 +401,7 @@ int chargingStationMain(int estado, int corrente_max)
 	}
 
 	//Mantém a razão cíclica em 0%, enquando o erro persistir
-	if(estado_F == true){
+	if(DataStruct.state_F == 1){
 		razao = 0;
 	}
 	return razao;
@@ -469,20 +473,37 @@ void dispositivoDeManobra(int acao){
 
 //Funcao auxiliar só para printar na tela (Temporária)
 void printTela(){
+	// Serial.print(">Estado: ");
+	// Serial.println(DataStruct.vehicleState);
+	
 	printf("Estado: %d\n", DataStruct.vehicleState);
 	// printf("AD CP: %d\n\n", DataStruct.Media_Piloto);
 	
+	// Serial.print(">Cabo: ");
+	// Serial.println(DataStruct.cableCurrent);
 	printf("Cabo: %d\n", DataStruct.cableCurrent);
 	// printf("AD PP: %d\n\n", DataStruct.Ad_Proximidade);
 	// printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
 	// printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
 	
+	// Serial.print(">Iniciar_Recarga: ");
+	// Serial.println(DataStruct.startChargingByUser);
 	printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);
+	
+	// Serial.print(">Razao: ");
+	// Serial.println(DataStruct.dutyCycle);
+
+	// Serial.print(">statePinDC: ");
+	// Serial.println(DataStruct.statePinDC);
+
+	// Serial.print(">statePinAC: ");
+	// Serial.println(DataStruct.statePinAC);
+	
 	printf("Razao: %0.2f %%\n\n", static_cast<float>((DataStruct.dutyCycle*100)/1023.0f));
 	// printf("%");
 	//printf("Contador C: %d\n", DataStruct.Contador_C);
 	//printf("Contador BT: %d\n", DataStruct.Contador_BT);
-	
+
 	printf("Tensão L1: %0.3f   Corrente L1: %0.3f", myWattmeter.getFilteredVolts(1), myWattmeter.getFilteredCurrents(1));
 	printf("\nTensão L2: %0.3f   Corrente L2: %0.3f", myWattmeter.getFilteredVolts(2), myWattmeter.getFilteredCurrents(2));
 	printf("\nTensão L3: %0.3f   Corrente L3: %0.3f", myWattmeter.getFilteredVolts(3), myWattmeter.getFilteredCurrents(3));
@@ -492,8 +513,10 @@ void printTela(){
 	printf("Charging: %d\n", DataStruct.mcCharging);
 	printf("Finishing: %d\n", DataStruct.mcFinishing);
 	printf("Faulted: %d\n", DataStruct.mcFaulted);
-	printf("Tipo de falha: %s", DataStruct.typeError.c_str());
+	printf("Tipo de falha: %s\n", DataStruct.typeError.c_str());
 
+	printf("statePinDC: %d\n", DataStruct.statePinDC);
+	printf("statePinAC: %d", DataStruct.statePinAC);
 
 	printf("\n-----------------------------------------------------\n");
 }
@@ -537,17 +560,17 @@ void stateMachineControl(int state, int dutyCycle){
 
 }
 
-bool monitorFaultStatus(){
-	bool stateFault;
+void monitorFaultStatus(){
+	bool stateFault = false;
 
 	if(DataStruct.vehicleState==12||DataStruct.vehicleState==9||DataStruct.vehicleState==6||DataStruct.vehicleState==3){
 		stateFault = false;
 		DataStruct.typeError = "----";
 	}
 
-	// Falha no condicionamento do sinal PWM (melhorar)
+	//Falha no condicionamento do sinal PWM (melhorar)
 	if(DataStruct.dutyCycle == 1023 && DataStruct.vehicleState == -12){
-		stateFault = true;
+		stateFault = true;   //Alterar 
 		DataStruct.typeError = "Falha no condicionamento do PWM";
 	}else{
 		stateFault = false;
@@ -558,10 +581,31 @@ bool monitorFaultStatus(){
 		DataStruct.typeError = "Curto entre CP e PE";
 	}
 	
+	//Fuga CC detectada
+	if(DataStruct.statePinDC == 0){
+		stateFault = true;
+		DataStruct.state_F = 1;
+		DataStruct.typeError = "Fuga CC de 6 mA";
+	}else{
+		stateFault = false;
+		DataStruct.state_F = 0;
+		DataStruct.typeError = "----";
+	}
+
+	//Fuga CA detectada
+	if(DataStruct.statePinAC == 0){
+		stateFault = true;
+		DataStruct.state_F = 1;
+		DataStruct.typeError = "Fuga CA de 30 mA";
+	}else{
+		stateFault = false;
+		DataStruct.state_F = 0;
+		DataStruct.typeError = "----";
+	}
 	// Sobretensão
 
 	// Subtensão
 
 	//
-	return stateFault;
+	
 }

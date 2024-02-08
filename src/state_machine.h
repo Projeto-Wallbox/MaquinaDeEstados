@@ -22,6 +22,12 @@ extern gpio_num_t LED_D; // Led de erro ou falha
 
 extern adc1_channel_t CHANNEL_PILOT; //Configuração do canal ADC para o CP
 extern adc1_channel_t CHANNEL_PROXIMIDADE; //Configuração do canal ADC para o PP
+extern adc1_channel_t CHANNEL_FAULT;
+
+
+extern gpio_num_t PIN_FAULT;
+extern gpio_num_t PIN_TRIG_DC; 
+extern gpio_num_t PIN_TRIG_AC; 
 
 // Definição da estrutura global
 struct GlobalStruct
@@ -61,6 +67,9 @@ struct GlobalStruct
 
     //Parte para falhas
     std::string typeError = "---";
+    int statePinAC;
+    int statePinDC;
+    int state_F;
 };
 
 // Declaração da variável global
@@ -76,6 +85,6 @@ void leBotao();
 void dispositivoDeManobra(int acao);
 void printTela();
 void stateMachineControl(int state, int dutyCycle);
-bool monitorFaultStatus();
+void monitorFaultStatus();
 
 #endif
