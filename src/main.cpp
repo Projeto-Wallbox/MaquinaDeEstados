@@ -22,21 +22,30 @@
 #include <MicroOcpp.h>
 #include <MicroOcpp_c.h>
 #include <MicroOcpp/Core/Configuration.h>
+
+const int connectorId = 1;
 #endif
 
 //#include "SparkFun_ACS37800_Arduino_Library.h"
 //#include <Wire.h>
+//ACS37800 wattmeter; // Create an object of the ACS37800 class
+
 #ifdef COMPILE_WATT
 #include "wattmeter_sensor.h"
 #include <Wire.h>
+
+#define SENSE_RES 3000
+#define DIVIDER_RES 4000000
+#define NUM_SAMPLES 200    
+#define NUM_SAMPLES_CURRENTS 200
+#define UNDER_VOLTAGE 5
+#define OVER_VOLTAGE 4
+#define OVER_CURRENT 13
 #endif
 
-//ACS37800 wattmeter; // Create an object of the ACS37800 class
-#ifdef COMPILE_OCPP
-const int connectorId = 1;
-#endif
+
 // DEFINIR PINOS---------------------------------------------------------------------------------
-//DEFINICOES DE PINOS
+//DEFINICOES DE PINOS ESP32_DEV
 #ifdef ESP32_DEV
 gpio_num_t PILOT_PIN = GPIO_NUM_32;		 // Pino para leitura AD do Sinal VA
 gpio_num_t PINO_PROXIMIDADE = GPIO_NUM_33;	 // Pino para leitura AD do do cabo conectado
@@ -62,7 +71,7 @@ gpio_num_t PIN_TRIG_AC = GPIO_NUM_13;
 #define PIN_SCL 22
 #endif
 
-//DEFINICOES DE PINOS
+//DEFINICOES DE PINOS ESP32-S3-DEVKITC-1
 #ifdef ESP32_S3
 gpio_num_t PILOT_PIN = GPIO_NUM_8;
 gpio_num_t PINO_PROXIMIDADE = GPIO_NUM_7;
@@ -78,6 +87,7 @@ gpio_num_t LED_B = GPIO_NUM_10;	// O LEDB(Estado 9), piscando (Carregando)
 gpio_num_t LED_C = GPIO_NUM_2;	
 gpio_num_t LED_D = GPIO_NUM_18; 
 gpio_num_t START_RECHARGER_BT = GPIO_NUM_9;
+
 adc1_channel_t CHANNEL_PILOT = ADC1_CHANNEL_7;
 adc1_channel_t CHANNEL_PROXIMIDADE = ADC1_CHANNEL_6;
 
@@ -105,6 +115,7 @@ void timer_callback(void *param)
 }
 #endif
 
+// TASK DO MONITOR DE CORRENTE RESIDUAL
 #ifdef COMPILE_D_RES_CURR
 void monitorCurrentTask(void *pvParameters) {	
 		while (1) {
@@ -125,7 +136,7 @@ void monitorCurrentTask(void *pvParameters) {
 			// Serial.print("Espaço livre mínimo da pilha: ");
 			// Serial.println(uxHighWaterMark);
 
-        vTaskDelay(pdMS_TO_TICKS(100)); // Espera por 100 ms
+        vTaskDelay(pdMS_TO_TICKS(1)); // Espera por 100 ms
     }
 }
 #endif
@@ -180,13 +191,13 @@ void setup()
 	config_wattmeter my_config = {
 		.pinscl = PIN_SCL,  
     .pinsda = PIN_SDA,   
-    .senseRes = 3000,
-    .DividerRes = 4000000,
-    .numsamples = 200,      
-    .numsamplescurrents = 200, 
-    .undervoltage = 5,
-    .overvoltage = 4, 
-    .overcurrent= 13,
+    .senseRes = SENSE_RES,
+    .DividerRes = DIVIDER_RES,
+    .numsamples = NUM_SAMPLES,      
+    .numsamplescurrents = NUM_SAMPLES_CURRENTS, 
+    .undervoltage = UNDER_VOLTAGE,
+    .overvoltage = OVER_VOLTAGE, 
+    .overcurrent= OVER_CURRENT,
 	};
 
 	myWattmeter.initWattmeter(my_config);
