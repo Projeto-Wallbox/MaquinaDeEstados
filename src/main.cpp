@@ -1,6 +1,6 @@
 #define COMPILE_ME
 //#define COMPILE_OCPP
-//#define COMPILE_WATT
+#define COMPILE_WATT
 #define COMPILE_D_RES_CURR
 
 #include "esp_timer.h"
@@ -34,7 +34,7 @@ const int connectorId = 1;
 #include "wattmeter_sensor.h"
 #include <Wire.h>
 
-#define SENSE_RES 3000
+#define SENSE_RES 2550
 #define DIVIDER_RES 4000000
 #define NUM_SAMPLES 200    
 #define NUM_SAMPLES_CURRENTS 200
@@ -49,13 +49,13 @@ const int connectorId = 1;
 #ifdef ESP32_DEV
 gpio_num_t PILOT_PIN = GPIO_NUM_32;		 // Pino para leitura AD do Sinal VA
 gpio_num_t PINO_PROXIMIDADE = GPIO_NUM_33;	 // Pino para leitura AD do do cabo conectado
-gpio_num_t PWM_PIN = GPIO_NUM_15;			 // Pino no qual é gerado o sinal PWM
+gpio_num_t PWM_PIN = GPIO_NUM_2;			 // Pino no qual é gerado o sinal PWM
 gpio_num_t RELE_N = GPIO_NUM_4;			 // Pino de saida, para acionar o Relé do Neutro (N)
 gpio_num_t RELE_L3 = GPIO_NUM_5;			 // Pino de saida, para acionar o Relé da fase 1 (L1)
 gpio_num_t RELE_L2 = GPIO_NUM_18;			 // Pino de saida, para acionar o Relé da fase 2 (L2)
 gpio_num_t RELE_L1 = GPIO_NUM_19;			 // Pino de saida, para acionar o Relé da fase 3 (L3)
 gpio_num_t LED_A = GPIO_NUM_26;				 // Led de EVSE ON/OF
-gpio_num_t LED_B = GPIO_NUM_2;				 // Led de carregamento
+gpio_num_t LED_B = GPIO_NUM_15;				 // Led de carregamento
 gpio_num_t LED_C = GPIO_NUM_14;				 // Led de conexao a rede Wi-fi
 gpio_num_t LED_D = GPIO_NUM_27;				 // Led de erro ou falha
 gpio_num_t START_RECHARGER_BT = GPIO_NUM_23; // Pino de entrada, para setar o inicio da recarga pela Estacao

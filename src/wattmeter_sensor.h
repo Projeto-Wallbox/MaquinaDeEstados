@@ -45,7 +45,7 @@ private:
     float filteredCurrentsL1;                 // Filtered value of current
     float filteredCurrentsL2;
     float filteredCurrentsL3;
-    float PowerApparent;                    // Variable that receives the value of the apparent power
+    float PowerApparentL1;                    // Variable that receives the value of the apparent power
     float PowerActive;                      // Variable that receives the value of the active power
     float energy;                           // Variable to store the accumulated energy in kWh        
 

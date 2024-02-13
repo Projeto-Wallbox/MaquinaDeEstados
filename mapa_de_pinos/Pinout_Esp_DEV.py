@@ -5,7 +5,7 @@ pinos_utilizados = {
     "IO21": "PIN_SDA",
     "IO22": "PIN_SCL",
 
-    "IO15": "PWM_PIN",
+    "IO2": "PWM_PIN",
     "IO32": "PILOT_PIN",
     "IO33": "PINO_PROXIMIDADE",
     
@@ -15,7 +15,7 @@ pinos_utilizados = {
     "IO19": "RELE_L1",
 
     "IO26": "LED_A",
-    "IO2": "LED_B",
+    "IO15": "LED_B",
     "IO14": "LED_C",
     "IO27": "LED_D",
 

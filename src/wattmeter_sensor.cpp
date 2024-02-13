@@ -61,9 +61,9 @@ void WattmeterSensor::updateFilteredVolts(float vL1, float vL2, float vL3)
 // Calculate the average of the last samples (numSamplescurrents) stored in currentBuffer[]
 void WattmeterSensor::updateFilteredCurrents(float aL1, float aL2, float aL3) 
 {
-  float currentBufferL1[numSamplescurrents];         // Buffer to store the last samples of current values
-  float currentBufferL2[numSamplescurrents];
-  float currentBufferL3[numSamplescurrents];
+  static std::vector<float> currentBufferL1(numSamples);
+  static std::vector<float> currentBufferL2(numSamples); 
+  static std::vector<float> currentBufferL3(numSamples);
 
   currentBufferL1[currentIndexcurrents] = aL1;
   currentBufferL2[currentIndexcurrents] = aL2;
@@ -132,38 +132,42 @@ void WattmeterSensor::showRMSvalues()
   mySensor.readRMS(&voltsL1, &ampsL1); // Read the RMS voltage and current
   Wire.endTransmission();
 
-  mySensor.begin(ADRESS_L2);
-  mySensor.readRMS(&voltsL2, &ampsL2); // Read the RMS voltage and current
-  Wire.endTransmission();
+  // mySensor.begin(ADRESS_L2);
+  // mySensor.readRMS(&voltsL2, &ampsL2); // Read the RMS voltage and current
+  // Wire.endTransmission();
 
-  mySensor.begin(ADRESS_L3);
-  mySensor.readRMS(&voltsL3, &ampsL3); // Read the RMS voltage and current
-  Wire.endTransmission();
+  // mySensor.begin(ADRESS_L3);
+  // mySensor.readRMS(&voltsL3, &ampsL3); // Read the RMS voltage and current
+  // Wire.endTransmission();
 
   //realizar o filtro
-  updateFilteredVolts(voltsL1, voltsL2, voltsL3*1.266);
-  // updateFilteredCurrents(ampsL1, ampsL2, ampsL3);
+  updateFilteredVolts(voltsL1*0.8104, voltsL2, voltsL3);
+  updateFilteredCurrents(ampsL1*2.9175, ampsL2, ampsL3);
 
-  Serial.print(">L1Filter:");
-  Serial.println(filteredVoltsL1);
-  Serial.print(">L2Filter:");
-  Serial.println(filteredVoltsL2);
-  Serial.print(">L3Filter:");
-  Serial.println(filteredVoltsL3);
+  // Serial.print(">L1Filter:");
+  // Serial.println(filteredVoltsL1);
+  // Serial.print(">L2Filter:");
+  // Serial.println(filteredVoltsL2);
+  // Serial.print(">L3Filter:");
+  // Serial.println(filteredVoltsL3);
 
-  Serial.print(">voltsL1:");
-  Serial.println(voltsL1);
-  Serial.print(">voltsL2:");
-  Serial.println(voltsL2);
-  Serial.print(">voltsL3:");
-  Serial.println(voltsL3);
-
-  // PowerApparent = filteredCurrents * filteredVolts;
+  // Serial.print(">voltsL1:");
+  // Serial.println(voltsL1);
+  // Serial.print(">voltsL2:");
+  // Serial.println(voltsL2);
+  // Serial.print(">voltsL3:");
+  // Serial.println(voltsL3);
+  if(filteredCurrentsL1 >=1){
+    PowerApparentL1 = filteredCurrentsL1 * filteredVoltsL1;
+  }else{
+    PowerApparentL1 = 0;
+  }
+  
 }
 
 // Calculate energy in kWh
 void WattmeterSensor::calculateEnergy() {
-  energy += (PowerApparent * 10) / (3600.0 * 1000.0);  // Calcula a energia em kWh
+  energy += (PowerApparentL1 * 10) / (3600.0 * 1000.0);  // Calcula a energia em kWh
 }
 
 // Configuration and initialization of I2C communication and the ACS37800 Sensor
@@ -260,7 +264,7 @@ float WattmeterSensor::getFilteredCurrents(int line) {
 
 // Returns the apparent power (PowerApparent)
 float WattmeterSensor::getPowerApparent() {
-  return PowerApparent;
+  return PowerApparentL1;
 }
 
 // Returns the calculated energy (energy)

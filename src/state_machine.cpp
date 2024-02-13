@@ -74,7 +74,7 @@ int funcaoInterrupcao()
 		if (cont_atualiza >= 600) // a cada 100 ms ( 10 Hz)
 		{
 			//Atuzaliza os dados da estrura "maquinaDeEstados"
-			leBotao();
+			//leBotao();
 			DataStruct.cableCurrent = cabo_conectado;
 			DataStruct.maximumCurrent = corrente_maxima;
 			DataStruct.dutyCycle = razao_ciclica;
@@ -298,7 +298,7 @@ int chargingStationMain(int estado, int corrente_max)
 	static bool iniciar_recarga=false;					//Variável para autorizar o inicio de recarga
 
 	
-	iniciar_recarga = DataStruct.startChargingByUser;
+	//iniciar_recarga = DataStruct.startChargingByUser;
 	DataStruct.Contador_C = cont;
 	DataStruct.mcCharging = estadoDispositivoManobra;
 	DataStruct.stationCurrent = corrente_da_estacao; 
@@ -311,7 +311,7 @@ int chargingStationMain(int estado, int corrente_max)
 		bloqueio_contatora=false;
 		k=0;
 		//cont = 0;
-		if(estado == 9 && iniciar_recarga== 1)		//Estado B2
+		if(estado == 9 && iniciar_recarga== true)		//Estado B2
 		{
 			corrente_da_estacao=corrente_max;
 		}
@@ -327,11 +327,11 @@ int chargingStationMain(int estado, int corrente_max)
 	else
 	{	
 		//Lógica para o Estado C
-		if(estado==6 && iniciar_recarga == 1)
+		if(estado==6 && iniciar_recarga == true)
 		{
 			k=0;
 			corrente_da_estacao=corrente_max;
-			if(razao!=1023 && iniciar_recarga == 1)			//A contatora não pode fechar antes de o PWM indicar a estação como pronta
+			if(razao!=1023 && iniciar_recarga == true)			//A contatora não pode fechar antes de o PWM indicar a estação como pronta
 			{
 				cont = 0;
 				bloqueio_contatora=true;
@@ -477,12 +477,12 @@ void printTela(){
 	// Serial.println(DataStruct.vehicleState);
 	
 	printf("Estado: %d\n", DataStruct.vehicleState);
-	// printf("AD CP: %d\n\n", DataStruct.Media_Piloto);
+	printf("AD CP: %d\n\n", DataStruct.Media_Piloto);
 	
 	// Serial.print(">Cabo: ");
 	// Serial.println(DataStruct.cableCurrent);
 	printf("Cabo: %d\n", DataStruct.cableCurrent);
-	// printf("AD PP: %d\n\n", DataStruct.Ad_Proximidade);
+	printf("AD PP: %d\n\n", DataStruct.Ad_Proximidade);
 	// printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
 	// printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
 	
@@ -505,8 +505,12 @@ void printTela(){
 	//printf("Contador BT: %d\n", DataStruct.Contador_BT);
 
 	printf("Tensão L1: %0.3f   Corrente L1: %0.3f", myWattmeter.getFilteredVolts(1), myWattmeter.getFilteredCurrents(1));
+	printf("  Pot L1: %0.3f", myWattmeter.getPowerApparent());
+	
 	printf("\nTensão L2: %0.3f   Corrente L2: %0.3f", myWattmeter.getFilteredVolts(2), myWattmeter.getFilteredCurrents(2));
 	printf("\nTensão L3: %0.3f   Corrente L3: %0.3f", myWattmeter.getFilteredVolts(3), myWattmeter.getFilteredCurrents(3));
+
+	printf("\n\nEnergia: %0.3f", myWattmeter.getEnergy());
 
 	printf("\n\nAvailable: %d\n", DataStruct.mcAvailable);
 	printf("Preparing: %d\n", DataStruct.mcPreparing);
@@ -578,30 +582,30 @@ void monitorFaultStatus(){
 
 	// Curto entre CP e PE
 	if(DataStruct.dutyCycle == 1023 && DataStruct.vehicleState == 0){
-		DataStruct.typeError = "Curto entre CP e PE";
+		DataStruct.typeError = "Estado E - Curto entre CP e PE ou sem alimentação(+12 e -12)";
 	}
 	
-	//Fuga CC detectada
-	if(DataStruct.statePinDC == 0){
-		stateFault = true;
-		DataStruct.state_F = 1;
-		DataStruct.typeError = "Fuga CC de 6 mA";
-	}else{
-		stateFault = false;
-		DataStruct.state_F = 0;
-		DataStruct.typeError = "----";
-	}
+	// //Fuga CC detectada
+	// if(DataStruct.statePinDC == 0){
+	// 	stateFault = true;
+	// 	DataStruct.state_F = 1;
+	// 	DataStruct.typeError = "Fuga CC de 6 mA";
+	// }else{
+	// 	stateFault = false;
+	// 	DataStruct.state_F = 0;
+	// 	DataStruct.typeError = "----";
+	// }
 
-	//Fuga CA detectada
-	if(DataStruct.statePinAC == 0){
-		stateFault = true;
-		DataStruct.state_F = 1;
-		DataStruct.typeError = "Fuga CA de 30 mA";
-	}else{
-		stateFault = false;
-		DataStruct.state_F = 0;
-		DataStruct.typeError = "----";
-	}
+	// //Fuga CA detectada
+	// if(DataStruct.statePinAC == 0){
+	// 	stateFault = true;
+	// 	DataStruct.state_F = 1;
+	// 	DataStruct.typeError = "Fuga CA de 30 mA";
+	// }else{
+	// 	stateFault = false;
+	// 	DataStruct.state_F = 0;
+	// 	DataStruct.typeError = "----";
+	// }
 	// Sobretensão
 
 	// Subtensão
