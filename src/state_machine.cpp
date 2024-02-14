@@ -74,7 +74,7 @@ int funcaoInterrupcao()
 		if (cont_atualiza >= 600) // a cada 100 ms ( 10 Hz)
 		{
 			//Atuzaliza os dados da estrura "maquinaDeEstados"
-			//leBotao();
+			leBotao();
 			DataStruct.cableCurrent = cabo_conectado;
 			DataStruct.maximumCurrent = corrente_maxima;
 			DataStruct.dutyCycle = razao_ciclica;
@@ -298,7 +298,7 @@ int chargingStationMain(int estado, int corrente_max)
 	static bool iniciar_recarga=false;					//Variável para autorizar o inicio de recarga
 
 	
-	//iniciar_recarga = DataStruct.startChargingByUser;
+	iniciar_recarga = DataStruct.startChargingByUser;
 	DataStruct.Contador_C = cont;
 	DataStruct.mcCharging = estadoDispositivoManobra;
 	DataStruct.stationCurrent = corrente_da_estacao; 

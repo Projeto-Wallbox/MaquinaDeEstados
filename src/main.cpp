@@ -1,7 +1,7 @@
 #define COMPILE_ME
 //#define COMPILE_OCPP
 #define COMPILE_WATT
-#define COMPILE_D_RES_CURR
+//#define COMPILE_D_RES_CURR
 
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -33,6 +33,7 @@ const int connectorId = 1;
 #ifdef COMPILE_WATT
 #include "wattmeter_sensor.h"
 #include <Wire.h>
+#include <Arduino.h>
 
 #define SENSE_RES 2550
 #define DIVIDER_RES 4000000
@@ -146,10 +147,11 @@ void monitorCurrentTask(void *pvParameters) {
 void wattmeterTask(void *pvParameters) {
     int cont_pot = 0;
 		int cont_print = 0;
-	
+
 		while (1) {
+				
         myWattmeter.showRMSvalues();
-        cont_pot++;
+				cont_pot++;
 				cont_print++;
   
         if(cont_pot==1000){
@@ -186,6 +188,7 @@ bool isEvNotConnected()
 #endif
 
 void setup()
+
 {
 #ifdef COMPILE_WATT
 	config_wattmeter my_config = {

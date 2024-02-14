@@ -3,7 +3,6 @@
 #include "wattmeter_sensor.h"
 #include <vector>
 
-
 ACS37800 mySensor;            // Create an object of the ACS37800 class
 WattmeterSensor myWattmeter;  // Create an object of the WattmeterSensor class
 
@@ -144,23 +143,17 @@ void WattmeterSensor::showRMSvalues()
   updateFilteredVolts(voltsL1*0.8104, voltsL2, voltsL3);
   updateFilteredCurrents(ampsL1*2.9175, ampsL2, ampsL3);
 
-  // Serial.print(">L1Filter:");
-  // Serial.println(filteredVoltsL1);
-  // Serial.print(">L2Filter:");
-  // Serial.println(filteredVoltsL2);
-  // Serial.print(">L3Filter:");
-  // Serial.println(filteredVoltsL3);
+  // Serial.print(">L1VoltsFilter:");
+  // Serial.println(myWattmeter.getFilteredVolts(1), 5);
 
-  // Serial.print(">voltsL1:");
-  // Serial.println(voltsL1);
-  // Serial.print(">voltsL2:");
-  // Serial.println(voltsL2);
-  // Serial.print(">voltsL3:");
-  // Serial.println(voltsL3);
+  // Serial.print(">L1AmpsFilter:");
+  // Serial.println(myWattmeter.getFilteredCurrents(1), 5);
+
   if(filteredCurrentsL1 >=1){
     PowerApparentL1 = filteredCurrentsL1 * filteredVoltsL1;
   }else{
     PowerApparentL1 = 0;
+    filteredCurrentsL1 = 0;
   }
   
 }

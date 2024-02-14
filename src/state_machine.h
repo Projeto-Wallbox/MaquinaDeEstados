@@ -64,6 +64,7 @@ struct GlobalStruct
     int Media_Piloto;
     int Bt_Estado;
     int newState;
+    bool medir_watt; // PARA TESTE DO WATT
 
     //Parte para falhas
     std::string typeError = "---";
