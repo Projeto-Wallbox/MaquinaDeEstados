@@ -10,5 +10,5 @@ Está contido nos arquivos [*state_machine.cpp*](src/state_machine.cpp) e [*stat
 Está contido nos arquivos [*wattmeter_sensor.cpp*](src/wattmeter_sensor.cpp) e [*wattmeter_sensor.h*](src/wattmeter_sensor.h) as funções implementadas para a inicialização do sensor [*ACS37800*](https://www.allegromicro.com/en/products/sense/current-sensor-ics/zero-to-fifty-amp-integrated-conductor-sensor-ics/acs37800), leitura de tesão e corrente além do cálculo de potência e energia.
 
 ## OCPP
-Juntamente com este projeto está sendo implementado o cliente OCPP, sendo integrado junto a máquina de estados para coleta/envio informações, utilizando a biblioteca MicroOCPP. 
+Juntamente com este projeto está sendo implementado o cliente OCPP, sendo integrado junto a máquina de estados para coleta/envio de informações, utilizando a biblioteca MicroOCPP. 
 
