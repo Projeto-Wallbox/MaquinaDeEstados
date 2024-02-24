@@ -318,7 +318,7 @@ void loop()
 		setConnectorPluggedInput(isEvConnected, connectorId);
 	}
 
-	if (DataStruct.mcCharging)
+	if (DataStruct.mcCharging && isTransactionRunning(connectorId) == false)
 	{
 		startTransaction("12345");
 	}
