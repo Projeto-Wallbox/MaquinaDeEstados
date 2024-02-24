@@ -145,23 +145,29 @@ void monitorCurrentTask(void *pvParameters) {
 #ifdef COMPILE_WATT
 void wattmeterTask(void *pvParameters) {
     int cont_pot = 0;
-		int cont_print = 0;
+		int cont_meterValue = 0;
 
 		while (1) {
 				
         myWattmeter.showRMSvalues();
 				cont_pot++;
-				cont_print++;
+				cont_meterValue++;
   
         if(cont_pot==1000){
           myWattmeter.calculateEnergy(); 
           cont_pot = 0;
         }
+
+				//myWattmeter.getFilteredVolts(1)
+				if(cont_meterValue==10000){
+          addMeterValueInput([](){return myWattmeter.getFilteredVolts(1);}, "Voltage","V",nullptr, nullptr,connectorId);
+          cont_meterValue = 0;
+        }
         // UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
         // Serial.print("Espaço livre mínimo da pilha: ");
         // Serial.println(uxHighWaterMark);
 
-        vTaskDelay(pdMS_TO_TICKS(1)); // Espera por 10 ms
+        vTaskDelay(pdMS_TO_TICKS(1)); // Espera por 1 ms
     }
 }
 #endif
