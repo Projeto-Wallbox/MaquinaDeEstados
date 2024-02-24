@@ -1,5 +1,5 @@
 #define COMPILE_ME
-//#define COMPILE_OCPP
+#define COMPILE_OCPP
 #define COMPILE_WATT
 //#define COMPILE_D_RES_CURR
 
@@ -88,11 +88,15 @@ gpio_num_t LED_B = GPIO_NUM_10;	// O LEDB(Estado 9), piscando (Carregando)
 gpio_num_t LED_C = GPIO_NUM_2;	
 gpio_num_t LED_D = GPIO_NUM_18; 
 gpio_num_t START_RECHARGER_BT = GPIO_NUM_9;
+gpio_num_t PIN_FAULT = GPIO_NUM_4;
+gpio_num_t PIN_TRIG_DC = GPIO_NUM_36;
+gpio_num_t PIN_TRIG_AC = GPIO_NUM_37;
 
 adc1_channel_t CHANNEL_PILOT = ADC1_CHANNEL_7;
 adc1_channel_t CHANNEL_PROXIMIDADE = ADC1_CHANNEL_6;
+adc1_channel_t CHANNEL_FAULT = ADC1_CHANNEL_3;
 
-#define SPEED_MODE_TIMER LEDC_LOW_SPEED_MODE;
+#define SPEED_MODE_TIMER LEDC_LOW_SPEED_MODE
 #define PIN_SDA 42
 #define PIN_SCL 39
 
@@ -162,19 +166,18 @@ void wattmeterTask(void *pvParameters) {
         // Serial.print("Espaço livre mínimo da pilha: ");
         // Serial.println(uxHighWaterMark);
 
-        vTaskDelay(pdMS_TO_TICKS(10)); // Espera por 10 ms
+        vTaskDelay(pdMS_TO_TICKS(1)); // Espera por 10 ms
     }
 }
 #endif
 
 // ############### OCPP
 #ifdef COMPILE_OCPP
-const char *OCPP_BACKEND_URL = "ws://200.18.45.173:7589"; //servidor
-const char *OCPP_BACKEND_URL = "ws://192.168.113.1:8089"; //pc henrique
+const char *OCPP_BACKEND_URL = "ws://200.18.75.25:3223"; //servidor
 const char *OCPP_CHARGE_BOX_ID = "IntrallWallbox";
 
-const char *ssid = "Galaxy_M51";
-const char *password = "testeesp";
+const char *ssid = "LabAT";
+const char *password = "inrilabat";
 
 bool isEvConnected()
 {

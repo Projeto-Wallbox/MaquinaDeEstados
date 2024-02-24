@@ -88,7 +88,7 @@ int funcaoInterrupcao()
 		{
 			if (cont_interfaceUsuario >= 6000) // a cada 1000 ms (1 Hz)
 			{ 
-				acendeLed();
+				//acendeLed();
 				printTela();
 				cont_interfaceUsuario = 0;
 			}
@@ -242,13 +242,13 @@ int defineEstado(int media_x1)
 	}
 	else
 	{
-		if((media_x1>3412)&&(media_x1<3753))		//Entre +8 V e +10 V
+		if((media_x1>3412)&&(media_x1<3900))		//Entre +8 V e +10 V
 		{
 		estado=9;
 		}
 		else
 		{
-			if((media_x1>2900)&&(media_x1<3241))		//Entre +5 V e +7 V
+			if((media_x1>2900)&&(media_x1<3300))		//Entre +5 V e +7 V
 			{
 				estado=6;
 			}
@@ -300,7 +300,7 @@ int chargingStationMain(int estado, int corrente_max)
 	
 	iniciar_recarga = DataStruct.startChargingByUser;
 	DataStruct.Contador_C = cont;
-	DataStruct.mcCharging = estadoDispositivoManobra;
+	//DataStruct.mcCharging = estadoDispositivoManobra;
 	DataStruct.stationCurrent = corrente_da_estacao; 
 //******Lógica que decide qual será a corrente máxima da estação e o estado da contatora*********************
 	//Lógica para os Estados: A, B, E e F ou cabo desconectado
@@ -553,12 +553,14 @@ void stateMachineControl(int state, int dutyCycle){
 
 
 	if(state == 6 && dutyCycle!=1023 && DataStruct.mcCharging == false){
+		printf("mcCharging = if\n");
 		DataStruct.mcCharging = true;
 		DataStruct.historyState = 6;
 		DataStruct.mcPreparing=false;
 		DataStruct.mcFinishing=false;
 	}
-	else{
+	else if(state == 6 && dutyCycle!=1023 && DataStruct.mcCharging == true){
+		printf("mcCharging = else\n");
 		DataStruct.mcCharging = false;
 	}
 
