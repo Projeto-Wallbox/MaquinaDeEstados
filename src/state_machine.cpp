@@ -9,6 +9,16 @@
 #include "wattmeter_sensor.h"
 #include <Wire.h>  //Teste para plot
 
+#ifdef COMPILE_OCPP
+#include <Arduino.h>
+#include <WiFi.h>
+#include <MicroOcpp.h>
+#include <MicroOcpp_c.h>
+#include <MicroOcpp/Core/Configuration.h>
+
+const int connectorId = 1;
+#endif
+
 
 GlobalStruct DataStruct; //Inicializa estrutura de dados (VER MELHOR FORMA)
 
@@ -525,7 +535,7 @@ void printTela(){
 }
 
 void stateMachineControl(int state, int dutyCycle){
-	if((state == -12 || state == 0) && DataStruct.mcFaulted == false){ //if(state == -12 && DataStruct.mcFaulted == false)
+	if((state == -12 || state == 0) && DataStruct.mcFaulted == false){ 
 		DataStruct.mcFaulted=true;
 		DataStruct.mcAvailable=false;
 		DataStruct.mcPreparing=false;
@@ -533,22 +543,28 @@ void stateMachineControl(int state, int dutyCycle){
 		DataStruct.mcCharging = false;
 	}
 
-	if(state == 12 && dutyCycle == 1023 && DataStruct.mcAvailable == false){  //&& DataStruct.mcAvailable == false
+	if(state == 12 && dutyCycle == 1023 && DataStruct.mcAvailable == false){  
 		DataStruct.mcAvailable = true;
 		DataStruct.mcCharging = false;
 		DataStruct.mcPreparing=false;
 		DataStruct.mcFinishing=false;
 		DataStruct.mcFaulted = false;
 		DataStruct.historyState = 12;
+#ifdef COMPILE_OCPP
+		setConnectorPluggedInput([](){return false;}, connectorId);
+#endif
 	}
 	// # Todo colocar o motivo da parada se foi local ou pelo veiculo para poder enviar no endtransaction do ocpp
-	
+
 	if(state == 9 && DataStruct.mcPreparing==false && DataStruct.historyState == 12){ //12 -> 9 preparing
 		DataStruct.mcPreparing=true;
 		DataStruct.mcAvailable = false;
 		DataStruct.mcCharging = false;		
 		DataStruct.mcFinishing=false;
 		DataStruct.mcFaulted = false;
+#ifdef COMPILE_OCPP
+		setConnectorPluggedInput([](){return true;}, connectorId);
+#endif
 	}
 
 	if(state == 9 && DataStruct.mcFinishing==false && DataStruct.historyState == 6){ //6 -> 9 finishing 
@@ -557,6 +573,9 @@ void stateMachineControl(int state, int dutyCycle){
 		DataStruct.mcAvailable = false;
 		DataStruct.mcCharging = false;		
 		DataStruct.mcFaulted = false;
+#ifdef COMPILE_OCPP
+		stopTransaction();
+#endif
 	}
 
 
@@ -569,6 +588,10 @@ void stateMachineControl(int state, int dutyCycle){
 		DataStruct.mcFaulted = false;
 		DataStruct.mcAvailable = false;
 		DataStruct.historyState = 6;
+#ifdef COMPILE_OCPP
+		startTransaction();
+#endif
+
 	}
 }
 

@@ -1,5 +1,4 @@
 #define COMPILE_ME
-#define COMPILE_OCPP
 #define COMPILE_WATT
 //#define COMPILE_D_RES_CURR
 
@@ -178,16 +177,6 @@ const char *OCPP_CHARGE_BOX_ID = "IntrallWallbox";
 
 const char *ssid = "LabAT";
 const char *password = "inrilabat";
-
-bool isEvConnected()
-{
-    return true; 
-}
-
-bool isEvNotConnected()
-{
-    return false; 
-}
 #endif
 
 void setup()
@@ -308,26 +297,6 @@ void loop()
 {
 #ifdef COMPILE_OCPP
 	mocpp_loop();
-	if (DataStruct.mcAvailable)
-	{
-		setConnectorPluggedInput(isEvNotConnected, connectorId);
-	}
-
-	if (DataStruct.mcPreparing)
-	{
-		setConnectorPluggedInput(isEvConnected, connectorId);
-	}
-
-	if (DataStruct.mcCharging && isTransactionRunning(connectorId) == false)
-	{
-		startTransaction("12345");
-	}
-
-	if (DataStruct.mcFinishing)
-	{
-		stopTransaction();
-	}
 #endif
 	
-
 }
