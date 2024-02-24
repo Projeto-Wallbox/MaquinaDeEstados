@@ -1,7 +1,3 @@
-#define COMPILE_ME
-#define COMPILE_WATT
-//#define COMPILE_D_RES_CURR
-
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

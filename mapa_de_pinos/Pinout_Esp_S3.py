@@ -9,10 +9,10 @@ pinos_utilizados = {
     "8": "PILOT_PIN",
     "7": "PINO_PROXIMIDADE",
     
-    "11": "RELE_N",
-    "12": "RELE_L3",
-    "13": "RELE_L2",
-    "14": "RELE_L1",
+    "11": "RELE_L1",
+    "12": "RELE_L2",
+    "13": "RELE_L3",
+    "14": "RELE_N",
 
     "1": "LED_A",
     "10": "LED_B",
@@ -20,9 +20,9 @@ pinos_utilizados = {
     "18": "LED_D",
 
     "9": "START_RECHARGER_BT",
-    "IO34": "PIN_FAULT",
-    "IO12": "PIN_TRIG_DC",
-    "IO13": "PIN_TRIG_AC"
+    "I4": "PIN_FAULT",
+    "36": "PIN_TRIG_DC",
+    "37": "PIN_TRIG_AC"
 }
 
 # Verifica se há pinos duplicados na definição dos pinos utilizados

@@ -589,7 +589,7 @@ void stateMachineControl(int state, int dutyCycle){
 		DataStruct.mcAvailable = false;
 		DataStruct.historyState = 6;
 #ifdef COMPILE_OCPP
-		startTransaction();
+		startTransaction("12345");
 #endif
 
 	}
