@@ -300,7 +300,6 @@ int chargingStationMain(int estado, int corrente_max)
 	
 	iniciar_recarga = DataStruct.startChargingByUser;
 	DataStruct.Contador_C = cont;
-	//DataStruct.mcCharging = estadoDispositivoManobra;
 	DataStruct.stationCurrent = corrente_da_estacao; 
 //******Lógica que decide qual será a corrente máxima da estação e o estado da contatora*********************
 	//Lógica para os Estados: A, B, E e F ou cabo desconectado
@@ -526,24 +525,23 @@ void printTela(){
 }
 
 void stateMachineControl(int state, int dutyCycle){
-	if(state == -12 ||state == 0){ //if(state == -12 && DataStruct.mcFaulted == false)
+	if((state == -12 || state == 0) && DataStruct.mcFaulted == false){ //if(state == -12 && DataStruct.mcFaulted == false)
 		DataStruct.mcFaulted=true;
 		DataStruct.mcAvailable=false;
 		DataStruct.mcPreparing=false;
 		DataStruct.mcFinishing=false;
-	}else{   //razão em 100%
-		DataStruct.mcFaulted = false;
+		DataStruct.mcCharging = false;
 	}
-	
-	if(state == 12 && dutyCycle == 1023){  //&& DataStruct.mcAvailable == false
+
+	if(state == 12 && dutyCycle == 1023 && DataStruct.mcAvailable == false){  //&& DataStruct.mcAvailable == false
 		DataStruct.mcAvailable = true;
-		DataStruct.historyState = 12;
+		DataStruct.mcCharging = false;
 		DataStruct.mcPreparing=false;
 		DataStruct.mcFinishing=false;
+		DataStruct.mcFaulted = false;
+		DataStruct.historyState = 12;
 	}
-	else{
-		DataStruct.mcAvailable = false;
-	}
+
 	// colocar o historico do disponivel para o preparando estado 12 -> 9 dai e preparando
 	// Verificar se o VE esta conectado
 	if((state==9) && DataStruct.mcPreparing==false && DataStruct.mcFinishing==false){
@@ -555,15 +553,12 @@ void stateMachineControl(int state, int dutyCycle){
 	if(state == 6 && dutyCycle!=1023 && DataStruct.mcCharging == false){
 		printf("mcCharging = if\n");
 		DataStruct.mcCharging = true;
-		DataStruct.historyState = 6;
 		DataStruct.mcPreparing=false;
 		DataStruct.mcFinishing=false;
+		DataStruct.mcFaulted = false;
+		DataStruct.mcAvailable = false;
+		DataStruct.historyState = 6;
 	}
-	else if(state == 6 && dutyCycle!=1023 && DataStruct.mcCharging == true){
-		printf("mcCharging = else\n");
-		DataStruct.mcCharging = false;
-	}
-
 }
 
 void monitorFaultStatus(){
