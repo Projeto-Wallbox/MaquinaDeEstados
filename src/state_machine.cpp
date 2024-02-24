@@ -541,13 +541,24 @@ void stateMachineControl(int state, int dutyCycle){
 		DataStruct.mcFaulted = false;
 		DataStruct.historyState = 12;
 	}
-
-	// colocar o historico do disponivel para o preparando estado 12 -> 9 dai e preparando
-	// Verificar se o VE esta conectado
-	if((state==9) && DataStruct.mcPreparing==false && DataStruct.mcFinishing==false){
-		DataStruct.historyState == 12 ? DataStruct.mcPreparing=true : DataStruct.mcPreparing=false;
-		DataStruct.historyState == 6 ? DataStruct.mcFinishing=true : DataStruct.mcFinishing=false;
+	// # Todo colocar o motivo da parada se foi local ou pelo veiculo para poder enviar no endtransaction do ocpp
+	
+	if(state == 9 && DataStruct.mcPreparing==false && DataStruct.historyState == 12){ //12 -> 9 preparing
+		DataStruct.mcPreparing=true;
+		DataStruct.mcAvailable = false;
+		DataStruct.mcCharging = false;		
+		DataStruct.mcFinishing=false;
+		DataStruct.mcFaulted = false;
 	}
+
+	if(state == 9 && DataStruct.mcFinishing==false && DataStruct.historyState == 6){ //6 -> 9 finishing 
+		DataStruct.mcFinishing=true;
+		DataStruct.mcPreparing=false;
+		DataStruct.mcAvailable = false;
+		DataStruct.mcCharging = false;		
+		DataStruct.mcFaulted = false;
+	}
+
 
 
 	if(state == 6 && dutyCycle!=1023 && DataStruct.mcCharging == false){
