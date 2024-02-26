@@ -158,6 +158,35 @@ void WattmeterSensor::showRMSvalues()
   
 }
 
+//
+void WattmeterSensor::powerOutage(){
+  int cont_power_outage = 0;
+  int number_measurements = 10;
+
+  float instVoltsL1 = 0.0;
+  float instAmpsL1 = 0.0;
+  float instWattsL1 = 0.0;
+
+
+
+  mySensor.readInstantaneous(&instVoltsL1, &instAmpsL1, &instWattsL1); // Read the instantaneous  
+
+  if (instVoltsL1 >= -1 && instVoltsL1 <= 1) {
+      cont_power_outage++;
+  } else {
+      cont_power_outage = 0; // Reinicia o contador se a tensão não estiver dentro do intervalo
+  }
+
+  //ocorreu uma queda de energia
+  if (cont_power_outage >= number_measurements) {
+      Serial.println("Queda de energia detectada!");
+     
+      cont_power_outage = 0;
+  }
+}
+
+
+
 // Calculate energy in kWh
 void WattmeterSensor::calculateEnergy() {
   energy += (PowerApparentL1 * 10) / (3600.0 * 1000.0);  // Calcula a energia em kWh

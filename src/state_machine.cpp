@@ -644,3 +644,23 @@ void monitorFaultStatus(){
 	//
 	
 }
+
+void powerOutageDetection( float tensao_atual){
+	int NUMERO_MEDIDAS = 20;
+	float tensao_anterior = 0;
+  bool queda_detectada = false;
+
+  for (int i = 0; i < NUMERO_MEDIDAS - 1; i++) {
+    if (tensao_atual < tensao_anterior) {
+      queda_detectada = true;
+      break;
+    }
+    tensao_anterior = tensao_atual;
+  }
+
+  if (queda_detectada) {
+    Serial.println("A rede de energia caiu!");
+    // Coloque aqui o código para lidar com a queda de energia
+  }
+
+}

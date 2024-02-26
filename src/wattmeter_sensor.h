@@ -63,7 +63,8 @@ public:
     void PowerReactiveandActive();
     void showRMSvalues();
     void calculateEnergy();
-    void initWattmeter(config_wattmeter &params);  
+    void initWattmeter(config_wattmeter &params); 
+    void powerOutage(); 
 
     void setNumSamples(int newSamples);
     void setnumSamplescurrents(int newSamplescurrents);
