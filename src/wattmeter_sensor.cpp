@@ -3,6 +3,8 @@
 #include "wattmeter_sensor.h"
 #include <vector>
 
+gpio_num_t PINO_TESTE = GPIO_NUM_14;
+
 ACS37800 mySensor;            // Create an object of the ACS37800 class
 WattmeterSensor myWattmeter;  // Create an object of the WattmeterSensor class
 
@@ -126,9 +128,16 @@ void WattmeterSensor::showRMSvalues()
 
   float voltsL3 = 0.0;
   float ampsL3 = 0.0;
+
+  float instVoltsL1 = 0.0;
+  float instAmpsL1 = 0.0;
+  float instWattsL1 = 0.0;
+
   
   mySensor.begin(ADRESS_L1);
   mySensor.readRMS(&voltsL1, &ampsL1); // Read the RMS voltage and current
+  mySensor.readInstantaneous(&instVoltsL1, &instAmpsL1, &instWattsL1); // Read the instantaneous
+  powerOutage(instVoltsL1); // call function power Outage
   Wire.endTransmission();
 
   // mySensor.begin(ADRESS_L2);
@@ -158,34 +167,27 @@ void WattmeterSensor::showRMSvalues()
   
 }
 
-//
-void WattmeterSensor::powerOutage(){
-  int cont_power_outage = 0;
-  int number_measurements = 10;
-
-  float instVoltsL1 = 0.0;
-  float instAmpsL1 = 0.0;
-  float instWattsL1 = 0.0;
-
-
-
-  mySensor.readInstantaneous(&instVoltsL1, &instAmpsL1, &instWattsL1); // Read the instantaneous  
-
-  if (instVoltsL1 >= -1 && instVoltsL1 <= 1) {
-      cont_power_outage++;
+//MELHORAR E TESTAR PARA QUEDA DE ENERGIA(CHAMAR A CADA 0.5ms)
+void WattmeterSensor::powerOutage(float newInstVolts){
+  static int cont_outage = 0;
+  static int number_measurements = 4;
+  
+  if (newInstVolts >= -20 && newInstVolts <= 20) {
+      cont_outage++;
   } else {
-      cont_power_outage = 0; // Reinicia o contador se a tensão não estiver dentro do intervalo
+      cont_outage = 0; // Reinicia o contador se a tensão não estiver dentro do intervalo
   }
 
   //ocorreu uma queda de energia
-  if (cont_power_outage >= number_measurements) {
-      Serial.println("Queda de energia detectada!");
-     
-      cont_power_outage = 0;
+  if (cont_outage >= number_measurements) {      
+      gpio_set_level(PINO_TESTE, true); //
+      cont_outage = 0;
+      
+      //Serial.println(F("\nSem energia"));
+      //delay(3000);
+      gpio_set_level(PINO_TESTE, false); //
   }
 }
-
-
 
 // Calculate energy in kWh
 void WattmeterSensor::calculateEnergy() {

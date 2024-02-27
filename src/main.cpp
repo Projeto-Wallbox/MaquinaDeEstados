@@ -136,7 +136,7 @@ void monitorCurrentTask(void *pvParameters) {
 			// Serial.print("Espaço livre mínimo da pilha: ");
 			// Serial.println(uxHighWaterMark);
 
-        vTaskDelay(pdMS_TO_TICKS(1)); // Espera por 100 ms
+        vTaskDelay(pdMS_TO_TICKS(1)); // Espera por 1 ms
     }
 }
 #endif
@@ -146,12 +146,14 @@ void monitorCurrentTask(void *pvParameters) {
 void wattmeterTask(void *pvParameters) {
     int cont_pot = 0;
 		int cont_meterValue = 0;
+		int cont_RMS = 0;
 
 		while (1) {
-				
-        myWattmeter.showRMSvalues();
 				cont_pot++;
 				cont_meterValue++;
+				
+        myWattmeter.showRMSvalues();
+        
   
         if(cont_pot==1000){
           myWattmeter.calculateEnergy(); 
@@ -160,14 +162,17 @@ void wattmeterTask(void *pvParameters) {
 
 				//myWattmeter.getFilteredVolts(1)
 				if(cont_meterValue==10000){
+
+#ifdef COMPILE_OCPP
           addMeterValueInput([](){return myWattmeter.getFilteredVolts(1);}, "Voltage","V",nullptr, nullptr,connectorId);
+#endif
           cont_meterValue = 0;
         }
         // UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
         // Serial.print("Espaço livre mínimo da pilha: ");
         // Serial.println(uxHighWaterMark);
 
-        vTaskDelay(pdMS_TO_TICKS(1)); // Espera por 1 ms
+        vTaskDelay(pdMS_TO_TICKS(0.5)); // Espera por 0.5 ms
     }
 }
 #endif

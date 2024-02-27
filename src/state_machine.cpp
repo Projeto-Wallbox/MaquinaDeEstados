@@ -468,10 +468,10 @@ void leBotao(){
 //Funcao para controle do dispositivo de manobra(relés)
 void dispositivoDeManobra(int acao){
 	if(acao == 1){
-		gpio_set_level(RELE_L1, true); // Liga Dispositivo de manobra
-		gpio_set_level(RELE_L2, true); // Liga Dispositivo de manobra
-		gpio_set_level(RELE_L3, true); // Liga Dispositivo de manobra
-		gpio_set_level(RELE_N, true); // Liga Dispositivo de manobra
+		// gpio_set_level(RELE_L1, true); // Liga Dispositivo de manobra
+		// gpio_set_level(RELE_L2, true); // Liga Dispositivo de manobra
+		// gpio_set_level(RELE_L3, true); // Liga Dispositivo de manobra
+		// gpio_set_level(RELE_N, true); // Liga Dispositivo de manobra
 	}else{
 		gpio_set_level(RELE_L1, false); // Desliga Dispositivo de manobra
 		gpio_set_level(RELE_L2, false); // Desliga Dispositivo de manobra
@@ -645,22 +645,22 @@ void monitorFaultStatus(){
 	
 }
 
-void powerOutageDetection( float tensao_atual){
-	int NUMERO_MEDIDAS = 20;
-	float tensao_anterior = 0;
-  bool queda_detectada = false;
+// void powerOutageDetection( float tensao_atual){
+// 	int NUMERO_MEDIDAS = 20;
+// 	float tensao_anterior = 0;
+//   bool queda_detectada = false;
 
-  for (int i = 0; i < NUMERO_MEDIDAS - 1; i++) {
-    if (tensao_atual < tensao_anterior) {
-      queda_detectada = true;
-      break;
-    }
-    tensao_anterior = tensao_atual;
-  }
+//   for (int i = 0; i < NUMERO_MEDIDAS - 1; i++) {
+//     if (tensao_atual < tensao_anterior) {
+//       queda_detectada = true;
+//       break;
+//     }
+//     tensao_anterior = tensao_atual;
+//   }
 
-  if (queda_detectada) {
-    Serial.println("A rede de energia caiu!");
-    // Coloque aqui o código para lidar com a queda de energia
-  }
+//   if (queda_detectada) {
+//     Serial.println("A rede de energia caiu!");
+//     // Coloque aqui o código para lidar com a queda de energia
+//   }
 
-}
+// }
