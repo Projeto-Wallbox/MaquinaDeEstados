@@ -49,7 +49,7 @@ int funcaoInterrupcao()
 
 	// a cada 166 us (6kHz)
 	DataStruct.statePinDC = gpio_get_level(PIN_TRIG_DC);
-  DataStruct.statePinAC = gpio_get_level(PIN_TRIG_AC);
+    DataStruct.statePinAC = gpio_get_level(PIN_TRIG_AC);
 
 	medida_piloto = adc1_get_raw(CHANNEL_PILOT);	 // Leitura do piloto (1).																			
 	media_piloto = positivaPiloto(medida_piloto); // Calcula a média dos sinais (2)
@@ -448,20 +448,20 @@ void acendeLed(){
 
 //Funcao para controle do incio/fim de recarga pelo botao físico
 void leBotao(){ 
-		static int cont = 0;
-		DataStruct.Contador_BT = cont;
+	static int cont_botao = 0;
+	DataStruct.Contador_BT = cont_botao;
     int bt_estado = gpio_get_level(START_RECHARGER_BT);
      
     if (bt_estado == 1) {
-        cont++;
-    } else {cont = 0;}
+        cont_botao++;
+    } else {cont_botao = 0;}
 
-    if (cont >= 1 && cont <= 5) {
-        DataStruct.startChargingByUser = 1;
+    if (cont_botao >= 1 && cont_botao <= 5) {
+        DataStruct.startChargingByUser = true;
     }
 
-    if (cont >= 30) {
-        DataStruct.startChargingByUser = 0;
+    if (cont_botao >= 30) {
+        DataStruct.startChargingByUser = false;
     }
 }
 
@@ -644,23 +644,3 @@ void monitorFaultStatus(){
 	//
 	
 }
-
-// void powerOutageDetection( float tensao_atual){
-// 	int NUMERO_MEDIDAS = 20;
-// 	float tensao_anterior = 0;
-//   bool queda_detectada = false;
-
-//   for (int i = 0; i < NUMERO_MEDIDAS - 1; i++) {
-//     if (tensao_atual < tensao_anterior) {
-//       queda_detectada = true;
-//       break;
-//     }
-//     tensao_anterior = tensao_atual;
-//   }
-
-//   if (queda_detectada) {
-//     Serial.println("A rede de energia caiu!");
-//     // Coloque aqui o código para lidar com a queda de energia
-//   }
-
-// }

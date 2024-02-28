@@ -21,10 +21,6 @@
 const int connectorId = 1;
 #endif
 
-//#include "SparkFun_ACS37800_Arduino_Library.h"
-//#include <Wire.h>
-//ACS37800 wattmeter; // Create an object of the ACS37800 class
-
 #ifdef COMPILE_WATT
 #include "wattmeter_sensor.h"
 #include <Wire.h>
@@ -38,7 +34,6 @@ const int connectorId = 1;
 #define OVER_VOLTAGE 4
 #define OVER_CURRENT 13
 #endif
-
 
 // DEFINIR PINOS---------------------------------------------------------------------------------
 //DEFINICOES DE PINOS ESP32_DEV
@@ -305,5 +300,13 @@ void loop()
 #ifdef COMPILE_OCPP
 	mocpp_loop();
 #endif
+
+//Teste para inicio da recarga
+  if (Serial.available() > 0) { // Verifica se há dados disponíveis para leitura
+    int incomingByte = Serial.read() - '0'; // Lê o byte disponível e converte para int
+    bool value = (incomingByte != 0); // Converte o valor lido para true se for diferente de zero, false se for zero
+    DataStruct.startChargingByUser = value;
+  }
+
 	
 }
