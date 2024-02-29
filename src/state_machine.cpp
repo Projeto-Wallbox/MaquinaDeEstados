@@ -418,7 +418,7 @@ int chargingStationMain(int estado, int corrente_max)
 	return razao;
 }
 
-//Funcao para controle dos led indicadores ()
+//Funcao para controle dos led indicadores
 void acendeLed(){
 	static bool ledB = false;
 	static bool ledEstadoErro = false;
@@ -448,22 +448,29 @@ void acendeLed(){
 
 }
 
-
+//Função que le o estado do botao (esta sendo chamada a cada 100ms)
 void leBotao(){ 
-		static int cont = 0;
-		DataStruct.Contador_BT = cont;
+	static int cont = 0;
+	DataStruct.Contador_BT = cont;
     int bt_estado = gpio_get_level(START_RECHARGER_BT);
      
     if (bt_estado == 1) {
         cont++;
     }else {cont = 0;}
 
+	// Pressionado por uma vez
     if (cont >= 1 && cont <= 5) {
         DataStruct.startChargingByUser = 1;
     }
-
+	
+	//Pressionado por 3 segundos
     if (cont >= 30) {
         DataStruct.startChargingByUser = 0;
+    }
+
+	//pressionado por 10 segundos
+	if (cont >= 100) {
+        esp_restart();
     }
 }
 
@@ -536,6 +543,7 @@ void printTela(){
 	printf("\n-----------------------------------------------------\n");
 }
 
+//Maquina de estados para controle do OCPP
 void stateMachineControl(int state, int dutyCycle){
 	if((state == -12 || state == 0) && DataStruct.mcFaulted == false){ 
 		DataStruct.mcFaulted=true;
@@ -597,6 +605,7 @@ void stateMachineControl(int state, int dutyCycle){
 	}
 }
 
+//Usado para monitorar se existe alguma falha na estação
 void monitorFaultStatus(){
 	bool stateFault = false;
 
