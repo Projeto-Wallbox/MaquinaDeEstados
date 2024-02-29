@@ -3,7 +3,7 @@
 #include "wattmeter_sensor.h"
 #include <vector>
 
-gpio_num_t PINO_TESTE = GPIO_NUM_14;
+gpio_num_t PINO_TESTE = GPIO_NUM_37;
 
 ACS37800 mySensor;            // Create an object of the ACS37800 class
 WattmeterSensor myWattmeter;  // Create an object of the WattmeterSensor class

@@ -28,7 +28,7 @@ const int connectorId = 1;
 
 #define SENSE_RES 2550
 #define DIVIDER_RES 4000000
-#define NUM_SAMPLES 200    
+#define NUM_SAMPLES 500    
 #define NUM_SAMPLES_CURRENTS 200
 #define UNDER_VOLTAGE 5
 #define OVER_VOLTAGE 4
@@ -80,7 +80,7 @@ gpio_num_t LED_D = GPIO_NUM_18;
 gpio_num_t START_RECHARGER_BT = GPIO_NUM_9;
 gpio_num_t PIN_FAULT = GPIO_NUM_4;
 gpio_num_t PIN_TRIG_DC = GPIO_NUM_36;
-gpio_num_t PIN_TRIG_AC = GPIO_NUM_37;
+gpio_num_t PIN_TRIG_AC = GPIO_NUM_38;
 
 adc1_channel_t CHANNEL_PILOT = ADC1_CHANNEL_7;
 adc1_channel_t CHANNEL_PROXIMIDADE = ADC1_CHANNEL_6;
@@ -301,12 +301,11 @@ void loop()
 	mocpp_loop();
 #endif
 
-//Teste para inicio da recarga
-  if (Serial.available() > 0) { // Verifica se há dados disponíveis para leitura
-    int incomingByte = Serial.read() - '0'; // Lê o byte disponível e converte para int
-    bool value = (incomingByte != 0); // Converte o valor lido para true se for diferente de zero, false se for zero
-    DataStruct.startChargingByUser = value;
-  }
-
+// //Teste para inicio da recarga
+//   if (Serial.available() > 0) { // Verifica se há dados disponíveis para leitura
+//     int incomingByte = Serial.read() - '0'; // Lê o byte disponível e converte para int
+//     bool value = (incomingByte != 0); // Converte o valor lido para true se for diferente de zero, false se for zero
+//     DataStruct.startChargingByUser = value;
+//   }
 	
 }

@@ -7,8 +7,9 @@
 #include "esp_adc_cal.h"
 #include "state_machine.h"
 #include "wattmeter_sensor.h"
-#include <Wire.h>  //Teste para plot
 
+#include <time.h>
+// Definindo a constante para o tempo de pressionamento que consideraremos como um "toque" (em segundos)
 #ifdef COMPILE_OCPP
 #include <Arduino.h>
 #include <WiFi.h>
@@ -65,7 +66,7 @@ int funcaoInterrupcao()
 			//Acionar o circuito de alimentação extra via capacitor/bateria
 			//printf("ACIONAR BATERIA");   /// em teste
 		}
-
+		
 		cont_principal = 0;
 		medida_proximidade = adc1_get_raw(CHANNEL_PROXIMIDADE);     // Faz a leitura analogica do proximidade (3)
 		cabo_conectado = correnteCabo(medida_proximidade);		 // Identificacao do Cabo (4)
@@ -76,15 +77,16 @@ int funcaoInterrupcao()
 		}else if(cabo_conectado<32){
 			corrente_maxima = cabo_conectado;
 			}else{corrente_maxima = 32;}
-	
+
 		razao_ciclica = chargingStationMain(estado_veiculo, corrente_maxima); // MAQUINAS DE ESTADOS, CONTATORA E CALCULO DA RAZAO CICLICA    (6 e 7)
 	}
 	else
 	{
 		if (cont_atualiza >= 600) // a cada 100 ms ( 10 Hz)
 		{
-			//Atuzaliza os dados da estrura "maquinaDeEstados"
 			leBotao();
+
+			//Atuzaliza os dados da estrura "maquinaDeEstados"
 			DataStruct.cableCurrent = cabo_conectado;
 			DataStruct.maximumCurrent = corrente_maxima;
 			DataStruct.dutyCycle = razao_ciclica;
@@ -246,13 +248,13 @@ int defineEstado(int media_x1)
 	
 	//Fórmula de cálcula: Exemplo estado C (+5 a +7 V), para 5 V temos: {[(5+12)/(24)]*4095}
 
-	if(media_x1>3924)				//Maior que +11 V
+	if(media_x1>4000)				//Maior que +11 V
 	{
 		estado=12;		
 	}
 	else
 	{
-		if((media_x1>3412)&&(media_x1<3900))		//Entre +8 V e +10 V
+		if((media_x1>3412)&&(media_x1<3980))		//Entre +8 V e +10 V
 		{
 		estado=9;
 		}
@@ -300,7 +302,7 @@ int chargingStationMain(int estado, int corrente_max)
 	static int k=0;															//Contador do bloqueio da contatora
 	static int m=0;												      //Contador do bloqueio da razão cíclica
 	static int corrente_da_estacao=0;			      //Corrente máxima que a estaçao irá fornecer
-	static int cont = 0;
+	static int cont = 0;                        //Contador para lógica de abertura da contatora caso o VE nao responda ao fim da recarga
 	static bool estado_F=false;									//Altera o valor da razão cíclica para 0 quando true (estação com algum erro/não estiver pronta)
 	static bool estadoDispositivoManobra=false;	//Estado do dispositivo de manobra
 	static bool bloqueio_contatora=false;				//Variável que bloqueia a contatora por 6 segundo caso entre no modo ventilação
@@ -446,32 +448,32 @@ void acendeLed(){
 
 }
 
-//Funcao para controle do incio/fim de recarga pelo botao físico
+
 void leBotao(){ 
-	static int cont_botao = 0;
-	DataStruct.Contador_BT = cont_botao;
+		static int cont = 0;
+		DataStruct.Contador_BT = cont;
     int bt_estado = gpio_get_level(START_RECHARGER_BT);
      
     if (bt_estado == 1) {
-        cont_botao++;
-    } else {cont_botao = 0;}
+        cont++;
+    }else {cont = 0;}
 
-    if (cont_botao >= 1 && cont_botao <= 5) {
-        DataStruct.startChargingByUser = true;
+    if (cont >= 1 && cont <= 5) {
+        DataStruct.startChargingByUser = 1;
     }
 
-    if (cont_botao >= 30) {
-        DataStruct.startChargingByUser = false;
+    if (cont >= 30) {
+        DataStruct.startChargingByUser = 0;
     }
 }
 
 //Funcao para controle do dispositivo de manobra(relés)
 void dispositivoDeManobra(int acao){
 	if(acao == 1){
-		// gpio_set_level(RELE_L1, true); // Liga Dispositivo de manobra
-		// gpio_set_level(RELE_L2, true); // Liga Dispositivo de manobra
-		// gpio_set_level(RELE_L3, true); // Liga Dispositivo de manobra
-		// gpio_set_level(RELE_N, true); // Liga Dispositivo de manobra
+		gpio_set_level(RELE_L1, true); // Liga Dispositivo de manobra
+		gpio_set_level(RELE_L2, true); // Liga Dispositivo de manobra
+		gpio_set_level(RELE_L3, true); // Liga Dispositivo de manobra
+		gpio_set_level(RELE_N, true); // Liga Dispositivo de manobra
 	}else{
 		gpio_set_level(RELE_L1, false); // Desliga Dispositivo de manobra
 		gpio_set_level(RELE_L2, false); // Desliga Dispositivo de manobra
@@ -498,6 +500,7 @@ void printTela(){
 	// Serial.print(">Iniciar_Recarga: ");
 	// Serial.println(DataStruct.startChargingByUser);
 	printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);
+	printf("Iniciar_Recarga: %d\n", DataStruct.Contador_BT);
 	
 	// Serial.print(">Razao: ");
 	// Serial.println(DataStruct.dutyCycle);
@@ -512,14 +515,13 @@ void printTela(){
 	// printf("%");
 	//printf("Contador C: %d\n", DataStruct.Contador_C);
 	//printf("Contador BT: %d\n", DataStruct.Contador_BT);
-
+#ifdef COMPILE_WATT
 	printf("Tensão L1: %0.3f   Corrente L1: %0.3f", myWattmeter.getFilteredVolts(1), myWattmeter.getFilteredCurrents(1));
 	printf("  Pot L1: %0.3f", myWattmeter.getPowerApparent());
-	
 	printf("\nTensão L2: %0.3f   Corrente L2: %0.3f", myWattmeter.getFilteredVolts(2), myWattmeter.getFilteredCurrents(2));
 	printf("\nTensão L3: %0.3f   Corrente L3: %0.3f", myWattmeter.getFilteredVolts(3), myWattmeter.getFilteredCurrents(3));
-
 	printf("\n\nEnergia: %0.3f", myWattmeter.getEnergy());
+#endif	
 
 	printf("\n\nAvailable: %d\n", DataStruct.mcAvailable);
 	printf("Preparing: %d\n", DataStruct.mcPreparing);
