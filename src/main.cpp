@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -12,7 +13,6 @@
 #endif
 
 #ifdef COMPILE_OCPP
-#include <Arduino.h>
 #include <WiFi.h>
 #include <MicroOcpp.h>
 #include <MicroOcpp_c.h>
@@ -28,7 +28,6 @@ const int connectorId = 1;
 #ifdef COMPILE_WATT
 #include "wattmeter_sensor.h"
 #include <Wire.h>
-#include <Arduino.h>
 
 #define SENSE_RES 2550
 #define DIVIDER_RES 4000000
@@ -160,8 +159,10 @@ void wattmeterTask(void *pvParameters) {
 
 				//myWattmeter.getFilteredVolts(1)
 				if(cont_meterValue==10000){
+#ifdef COMPILE_OCPP
           addMeterValueInput([](){return myWattmeter.getFilteredVolts(1);}, "Voltage","V",nullptr, nullptr,connectorId);
           cont_meterValue = 0;
+#endif
         }
         // UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
         // Serial.print("Espaço livre mínimo da pilha: ");
@@ -184,6 +185,7 @@ const char *password = "inrilabat";
 void setup()
 
 {
+	Serial.begin(115200);
 #ifdef COMPILE_WATT
 	config_wattmeter my_config = {
 		.pinscl = PIN_SCL,  
@@ -300,5 +302,16 @@ void loop()
 #ifdef COMPILE_OCPP
 	mocpp_loop();
 #endif
-	
+
+	if (Serial.available() > 0) { // Verifica se há dados disponíveis para leitura
+			int incomingByte = Serial.read() - '0'; // Lê o byte disponível e converte para int
+			bool value = (incomingByte != 0); // Converte o valor lido para true se for diferente de zero, false se for zero
+
+			if (value) {
+				DataStruct.startChargingByUser = 1;
+			} 
+			if(value == false){
+					DataStruct.startChargingByUser = 0;
+			}
+		}
 }

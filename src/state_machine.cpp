@@ -246,7 +246,7 @@ int defineEstado(int media_x1)
 	
 	//Fórmula de cálcula: Exemplo estado C (+5 a +7 V), para 5 V temos: {[(5+12)/(24)]*4095}
 
-	if(media_x1>3924)				//Maior que +11 V
+	if(media_x1>4000)				//Maior que +11 V
 	{
 		estado=12;		
 	}
@@ -306,7 +306,7 @@ int chargingStationMain(int estado, int corrente_max)
 	static bool bloqueio_contatora=false;				//Variável que bloqueia a contatora por 6 segundo caso entre no modo ventilação
 	static bool bloqueio_razao_ciclica=false;		//Variável que bloqueia a alteração da razão cíclica por 5 segundos
 	static bool iniciar_recarga=false;					//Variável para autorizar o inicio de recarga
-
+	static int historyCurrent = 0;					//Salva a ultima alteracão de corrente
 	
 	iniciar_recarga = DataStruct.startChargingByUser;
 	DataStruct.Contador_C = cont;
@@ -330,7 +330,7 @@ int chargingStationMain(int estado, int corrente_max)
 		}
 
 		if(estado==9){cont = 0;}
-		if(estado==12){DataStruct.startChargingByUser = 0;}
+		if(estado==12 ||estado == -12 || estado == 0){DataStruct.startChargingByUser = 0;}
 	}
 	//Lógica para os Estados C e D com cabo conectado
 	else
@@ -348,7 +348,7 @@ int chargingStationMain(int estado, int corrente_max)
 				dispositivoDeManobra(estadoDispositivoManobra);
 			}             
 		}
-		//Lógica para o Estado D
+		//Lógica para o Estado D e usuario finaliza a recarga
 		else
 		{ // Lógica de abertura da contatora, não responta ao término da recarga (Transição 10.2)
 			if(cont >= 6000){   //Minimo 6 segundos
@@ -400,8 +400,9 @@ int chargingStationMain(int estado, int corrente_max)
 	}
 
 	//Lógica caso a razão cíclica deva ser atualizada
-	if(bloqueio_razao_ciclica==false)
+	if(bloqueio_razao_ciclica==false && (corrente_da_estacao != historyCurrent))
 	{	
+		historyCurrent = corrente_da_estacao;
 		if(corrente_da_estacao>=6 && corrente_da_estacao<=32){
 				razao = ((corrente_da_estacao/0.6)*(1023))/100;
 		}else{razao = 1023;}
@@ -463,6 +464,11 @@ void leBotao(){
     if (cont >= 30) {
         DataStruct.startChargingByUser = 0;
     }
+
+		//pressionado por 10 segundos
+		if (cont >= 100) {
+        esp_restart();
+    }
 }
 
 //Funcao para controle do dispositivo de manobra(relés)
@@ -513,6 +519,7 @@ void printTela(){
 	//printf("Contador C: %d\n", DataStruct.Contador_C);
 	//printf("Contador BT: %d\n", DataStruct.Contador_BT);
 
+#ifdef COMPILE_WATT
 	printf("Tensão L1: %0.3f   Corrente L1: %0.3f", myWattmeter.getFilteredVolts(1), myWattmeter.getFilteredCurrents(1));
 	printf("  Pot L1: %0.3f", myWattmeter.getPowerApparent());
 	
@@ -520,6 +527,7 @@ void printTela(){
 	printf("\nTensão L3: %0.3f   Corrente L3: %0.3f", myWattmeter.getFilteredVolts(3), myWattmeter.getFilteredCurrents(3));
 
 	printf("\n\nEnergia: %0.3f", myWattmeter.getEnergy());
+#endif
 
 	printf("\n\nAvailable: %d\n", DataStruct.mcAvailable);
 	printf("Preparing: %d\n", DataStruct.mcPreparing);
