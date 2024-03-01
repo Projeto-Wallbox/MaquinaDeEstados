@@ -71,6 +71,10 @@ struct GlobalStruct
     int statePinAC;
     int statePinDC;
     int state_F;
+
+    
+    void configPWM();
+
 };
 
 // Declaração da variável global

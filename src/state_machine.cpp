@@ -7,8 +7,14 @@
 #include "esp_adc_cal.h"
 #include "state_machine.h"
 #include "wattmeter_sensor.h"
-
 #include <time.h>
+
+#include "driver/ledc.h"
+#include "esp_err.h"
+
+#define SPEED_MODE_TIMER LEDC_LOW_SPEED_MODE
+static ledc_channel_config_t ledc_channel;
+
 // Definindo a constante para o tempo de pressionamento que consideraremos como um "toque" (em segundos)
 #ifdef COMPILE_OCPP
 #include <Arduino.h>
@@ -22,6 +28,26 @@ const int connectorId = 1;
 
 
 GlobalStruct DataStruct; //Inicializa estrutura de dados (VER MELHOR FORMA)
+
+void GlobalStruct::configPWM(){
+	 // Configuração do PWM
+  ledc_timer_config_t ledc_timer = {
+    .speed_mode = SPEED_MODE_TIMER,
+    .duty_resolution = LEDC_TIMER_10_BIT,
+    .timer_num = LEDC_TIMER_0,
+    .freq_hz = 1000,
+    .clk_cfg = LEDC_AUTO_CLK
+  };
+  ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
+
+  ledc_channel.channel = LEDC_CHANNEL_0;
+  ledc_channel.duty = 0;
+  ledc_channel.gpio_num = PWM_PIN;
+  ledc_channel.speed_mode = SPEED_MODE_TIMER;
+  ledc_channel.hpoint = 0;
+  ledc_channel.timer_sel = LEDC_TIMER_0;
+  ledc_channel_config(&ledc_channel);
+}
 
 //Funcao que deve ser chamada na Interrupcao
 int funcaoInterrupcao()
@@ -40,8 +66,8 @@ int funcaoInterrupcao()
 	static int medida_proximidade = 0;
 	static int estado_veiculo = 12;
 	static int cabo_conectado = 0;
-	static int razao_ciclica = 1000;
-	static int corrente_maxima;
+	static int razao_ciclica = 1023;
+	static int corrente_maxima = 0;
 
 	// measure_one++;
 	cont_principal++;
@@ -50,7 +76,7 @@ int funcaoInterrupcao()
 
 	// a cada 166 us (6kHz)
 	DataStruct.statePinDC = gpio_get_level(PIN_TRIG_DC);
-    DataStruct.statePinAC = gpio_get_level(PIN_TRIG_AC);
+  DataStruct.statePinAC = gpio_get_level(PIN_TRIG_AC);
 
 	medida_piloto = adc1_get_raw(CHANNEL_PILOT);	 // Leitura do piloto (1).																			
 	media_piloto = positivaPiloto(medida_piloto); // Calcula a média dos sinais (2)
@@ -68,16 +94,17 @@ int funcaoInterrupcao()
 		}
 		
 		cont_principal = 0;
-		medida_proximidade = adc1_get_raw(CHANNEL_PROXIMIDADE);     // Faz a leitura analogica do proximidade (3)
-		cabo_conectado = correnteCabo(medida_proximidade);		 // Identificacao do Cabo (4)
-		estado_veiculo = defineEstado(media_piloto);           // Determina o Estado (5)
+		//medida_proximidade = adc1_get_raw(CHANNEL_PROXIMIDADE);     // Faz a leitura analogica do proximidade (3)
+		cabo_conectado = 32;//correnteCabo(medida_proximidade);		 // Identificacao do Cabo (4)
+		estado_veiculo = 9;//defineEstado(media_piloto);           // Determina o Estado (5)
 	
 		if(DataStruct.currentSetByUser < cabo_conectado && DataStruct.currentSetByUser<=32){ //logica de maior corrente suportada 
 			corrente_maxima = DataStruct.currentSetByUser;
 		}else if(cabo_conectado<32){
 			corrente_maxima = cabo_conectado;
 			}else{corrente_maxima = 32;}
-
+		
+		corrente_maxima = 32;
 		razao_ciclica = chargingStationMain(estado_veiculo, corrente_maxima); // MAQUINAS DE ESTADOS, CONTATORA E CALCULO DA RAZAO CICLICA    (6 e 7)
 	}
 	else
@@ -101,7 +128,7 @@ int funcaoInterrupcao()
 			if (cont_interfaceUsuario >= 6000) // a cada 1000 ms (1 Hz)
 			{ 
 				//acendeLed();
-				printTela();
+				//printTela();
 				cont_interfaceUsuario = 0;
 			}
 		}
@@ -308,6 +335,7 @@ int chargingStationMain(int estado, int corrente_max)
 	static bool bloqueio_contatora=false;				//Variável que bloqueia a contatora por 6 segundo caso entre no modo ventilação
 	static bool bloqueio_razao_ciclica=false;		//Variável que bloqueia a alteração da razão cíclica por 5 segundos
 	static bool iniciar_recarga=false;					//Variável para autorizar o inicio de recarga
+	static int historyCurrent = 0;
 
 	
 	iniciar_recarga = DataStruct.startChargingByUser;
@@ -315,6 +343,11 @@ int chargingStationMain(int estado, int corrente_max)
 	DataStruct.stationCurrent = corrente_da_estacao; 
 //******Lógica que decide qual será a corrente máxima da estação e o estado da contatora*********************
 	//Lógica para os Estados: A, B, E e F ou cabo desconectado
+
+		if(iniciar_recarga == true){
+			corrente_da_estacao=corrente_max;
+		}else{corrente_da_estacao=0;}
+
 	if((estado==12)||(estado==9)||(estado==0)||(estado==-12)||(corrente_max==0))			
 	{
 		estadoDispositivoManobra=false;
@@ -337,7 +370,7 @@ int chargingStationMain(int estado, int corrente_max)
 	//Lógica para os Estados C e D com cabo conectado
 	else
 	{	
-		//Lógica para o Estado C
+		//Lógica para o Estado C veiculo carregando
 		if(estado==6 && iniciar_recarga == true)
 		{
 			k=0;
@@ -350,7 +383,7 @@ int chargingStationMain(int estado, int corrente_max)
 				dispositivoDeManobra(estadoDispositivoManobra);
 			}             
 		}
-		//Lógica para o Estado D
+		//Lógica para Usuaário finalizar a recarga e para o Estado D
 		else
 		{ // Lógica de abertura da contatora, não responta ao término da recarga (Transição 10.2)
 			if(cont >= 6000){   //Minimo 6 segundos
@@ -402,14 +435,18 @@ int chargingStationMain(int estado, int corrente_max)
 	}
 
 	//Lógica caso a razão cíclica deva ser atualizada
-	if(bloqueio_razao_ciclica==false)
+	if(bloqueio_razao_ciclica==false && corrente_da_estacao!=historyCurrent)
 	{	
+		historyCurrent = corrente_da_estacao;
 		if(corrente_da_estacao>=6 && corrente_da_estacao<=32){
 				razao = ((corrente_da_estacao/0.6)*(1023))/100;
 		}else{razao = 1023;}
 		
 		bloqueio_razao_ciclica=true;
 	}
+
+	DataStruct.dutyCycle = razao;
+
 
 	//Mantém a razão cíclica em 0%, enquando o erro persistir
 	if(DataStruct.state_F == 1){
@@ -476,11 +513,21 @@ void leBotao(){
 
 //Funcao para controle do dispositivo de manobra(relés)
 void dispositivoDeManobra(int acao){
+	
+	//Instalacoes monofasicas e bifasicas (F-N) ou (F-F)
+	int installation = myWattmeter.getMyInstallation();
 	if(acao == 1){
-		gpio_set_level(RELE_L1, true); // Liga Dispositivo de manobra
-		gpio_set_level(RELE_L2, true); // Liga Dispositivo de manobra
-		gpio_set_level(RELE_L3, true); // Liga Dispositivo de manobra
-		gpio_set_level(RELE_N, true); // Liga Dispositivo de manobra
+		if(installation == 1){
+			gpio_set_level(RELE_L1, true); // Liga Dispositivo de manobra
+			gpio_set_level(RELE_N, true); // Liga Dispositivo de manobra
+		}
+		if(installation == 3){
+			gpio_set_level(RELE_L1, true); // Liga Dispositivo de manobra
+			gpio_set_level(RELE_L2, true); // Liga Dispositivo de manobra
+			gpio_set_level(RELE_L3, true); // Liga Dispositivo de manobra
+			gpio_set_level(RELE_N, true); // Liga Dispositivo de manobra
+		}
+	
 	}else{
 		gpio_set_level(RELE_L1, false); // Desliga Dispositivo de manobra
 		gpio_set_level(RELE_L2, false); // Desliga Dispositivo de manobra
@@ -507,27 +554,20 @@ void printTela(){
 	// Serial.print(">Iniciar_Recarga: ");
 	// Serial.println(DataStruct.startChargingByUser);
 	printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);
-	printf("Iniciar_Recarga: %d\n", DataStruct.Contador_BT);
+	printf("Cont_botao: %d\n", DataStruct.Contador_BT);
 	
-	// Serial.print(">Razao: ");
-	// Serial.println(DataStruct.dutyCycle);
 
-	// Serial.print(">statePinDC: ");
-	// Serial.println(DataStruct.statePinDC);
-
-	// Serial.print(">statePinAC: ");
-	// Serial.println(DataStruct.statePinAC);
-	
 	printf("Razao: %0.2f %%\n\n", static_cast<float>((DataStruct.dutyCycle*100)/1023.0f));
-	// printf("%");
 	//printf("Contador C: %d\n", DataStruct.Contador_C);
 	//printf("Contador BT: %d\n", DataStruct.Contador_BT);
 #ifdef COMPILE_WATT
+	printf("Instalação: %d\n",myWattmeter.getMyInstallation());
 	printf("Tensão L1: %0.3f   Corrente L1: %0.3f", myWattmeter.getFilteredVolts(1), myWattmeter.getFilteredCurrents(1));
 	printf("  Pot L1: %0.3f", myWattmeter.getPowerApparent());
 	printf("\nTensão L2: %0.3f   Corrente L2: %0.3f", myWattmeter.getFilteredVolts(2), myWattmeter.getFilteredCurrents(2));
 	printf("\nTensão L3: %0.3f   Corrente L3: %0.3f", myWattmeter.getFilteredVolts(3), myWattmeter.getFilteredCurrents(3));
 	printf("\n\nEnergia: %0.3f", myWattmeter.getEnergy());
+
 #endif	
 
 	printf("\n\nAvailable: %d\n", DataStruct.mcAvailable);

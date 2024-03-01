@@ -6,6 +6,8 @@
 #include "driver/ledc.h"
 #include "esp_err.h"
 #include "esp_adc_cal.h"
+#include <Arduino.h>
+
 
 #ifdef COMPILE_ME
 #include "state_machine.h"
@@ -94,7 +96,7 @@ adc1_channel_t CHANNEL_FAULT = ADC1_CHANNEL_3;
 
 // DEFINIR VARIAVEIS ME-----------------------------------------------------------------------------
 #ifdef COMPILE_ME 
-static ledc_channel_config_t ledc_channel;
+//static ledc_channel_config_t ledc_channel;
 static esp_adc_cal_characteristics_t adc_chars; // Fornecido pela Esressif para calibracao do ADC
 int Razao_Ciclica_PWM = 1023;					// Variavel que armazena valor da razao cicllica
 
@@ -142,13 +144,19 @@ void wattmeterTask(void *pvParameters) {
     int cont_pot = 0;
 		int cont_meterValue = 0;
 		int cont_RMS = 0;
+		int cont_defineIstallation = 0;
 
 		while (1) {
 				cont_pot++;
 				cont_meterValue++;
 				
         myWattmeter.showRMSvalues();
-        
+
+				//em um segundo pega os valores RMS e define a ligacao
+        if(cont_defineIstallation<=2000){
+					myWattmeter.electricalInstallation();
+					cont_defineIstallation++;
+				}
   
         if(cont_pot==1000){
           myWattmeter.calculateEnergy(); 
@@ -157,6 +165,7 @@ void wattmeterTask(void *pvParameters) {
 
 				//myWattmeter.getFilteredVolts(1)
 				if(cont_meterValue==10000){
+					myWattmeter.electricalInstallation();
 
 #ifdef COMPILE_OCPP
           addMeterValueInput([](){return myWattmeter.getFilteredVolts(1);}, "Voltage","V",nullptr, nullptr,connectorId);
@@ -215,9 +224,10 @@ void setup()
 #endif
 
 #ifdef COMPILE_ME
+	
 	DataStruct.currentSetByUser = 32; // Valor de corrente externo usuario/APP/OCPP
 	DataStruct.startChargingByUser = 0;	 // valor alterado para iniciar ou encerrar recarga usuario/APP/OCPP
-
+	Serial.begin(115200);
 	gpio_set_direction(PWM_PIN, GPIO_MODE_OUTPUT);			 // Define pino como saida
 	gpio_set_direction(PILOT_PIN, GPIO_MODE_INPUT);		
 	gpio_set_direction(PINO_PROXIMIDADE, GPIO_MODE_INPUT);
@@ -238,23 +248,23 @@ void setup()
 	adc1_config_channel_atten(CHANNEL_PROXIMIDADE, ADC_ATTEN_DB_11);  //pino PP
 	adc1_config_channel_atten(CHANNEL_FAULT, ADC_ATTEN_DB_11);  //pino PP
 
+	DataStruct.configPWM();
+	// // CONFIGURA NEW PWM
+	// ledc_timer_config_t ledc_timer = {
+	// 	.speed_mode = SPEED_MODE_TIMER,
+	// 	.duty_resolution = LEDC_TIMER_10_BIT,
+	// 	.timer_num = LEDC_TIMER_0,
+	// 	.freq_hz = 1000,
+	// 	.clk_cfg = LEDC_AUTO_CLK};
+	// ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
 
-	// CONFIGURA NEW PWM
-	ledc_timer_config_t ledc_timer = {
-		.speed_mode = SPEED_MODE_TIMER,
-		.duty_resolution = LEDC_TIMER_10_BIT,
-		.timer_num = LEDC_TIMER_0,
-		.freq_hz = 1000,
-		.clk_cfg = LEDC_AUTO_CLK};
-	ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
-
-	ledc_channel.channel = LEDC_CHANNEL_0;
-	ledc_channel.duty = 0;
-	ledc_channel.gpio_num = PWM_PIN;
-	ledc_channel.speed_mode = SPEED_MODE_TIMER;
-	ledc_channel.hpoint = 0;
-	ledc_channel.timer_sel = LEDC_TIMER_0;
-	ledc_channel_config(&ledc_channel);
+	// ledc_channel.channel = LEDC_CHANNEL_0;
+	// ledc_channel.duty = 0;
+	// ledc_channel.gpio_num = PWM_PIN;
+	// ledc_channel.speed_mode = SPEED_MODE_TIMER;
+	// ledc_channel.hpoint = 0;
+	// ledc_channel.timer_sel = LEDC_TIMER_0;
+	// ledc_channel_config(&ledc_channel);
 
 	// CONFIGURA O TIMER E INTERRUPCAOO PRINCIPAL-------------------------------------------------------------------------
 	const esp_timer_create_args_t my_timer_args = {
@@ -262,7 +272,7 @@ void setup()
 		.name = "My Timer"};
 	esp_timer_handle_t timer_handler;
 	ESP_ERROR_CHECK(esp_timer_create(&my_timer_args, &timer_handler));
-	ESP_ERROR_CHECK(esp_timer_start_periodic(timer_handler, 167)); // 167 u,f= 6kHz P/ler 6 amostras de um ciclo PWM
+	ESP_ERROR_CHECK(esp_timer_start_periodic(timer_handler, 1000000)); // 167 u,f= 6kHz P/ler 6 amostras de um ciclo PWM
 #endif
 
 #ifdef COMPILE_D_RES_CURR
@@ -301,11 +311,33 @@ void loop()
 	mocpp_loop();
 #endif
 
-// //Teste para inicio da recarga
-//   if (Serial.available() > 0) { // Verifica se há dados disponíveis para leitura
-//     int incomingByte = Serial.read() - '0'; // Lê o byte disponível e converte para int
-//     bool value = (incomingByte != 0); // Converte o valor lido para true se for diferente de zero, false se for zero
-//     DataStruct.startChargingByUser = value;
-//   }
-	
+  if (Serial.available() > 0) { // Verifica se há dados disponíveis para leitura
+    int incomingByte = Serial.read() - '0'; // Lê o byte disponível e converte para int
+    bool value = (incomingByte != 0); // Converte o valor lido para true se for diferente de zero, false se for zero
+    
+    if (value) {
+			DataStruct.startChargingByUser = 1;
+		} 
+		if(value == false){
+				DataStruct.startChargingByUser = 0;
+		}
+
+		Serial.print("\n\nstartChargingByUser: ");
+		Serial.println(DataStruct.startChargingByUser);
+
+		Serial.print("Razao: ");
+		Serial.println(Razao_Ciclica_PWM);
+
+		Serial.print("dutyCycle: ");
+		Serial.println(DataStruct.dutyCycle);
+
+		Serial.print("Estado: ");
+		Serial.println(DataStruct.vehicleState);
+
+		Serial.print("Corrente: ");
+		Serial.println(DataStruct.maximumCurrent);
+		
+		Serial.print("StationCurrent: ");
+		Serial.println(DataStruct.stationCurrent);
+  }
 }

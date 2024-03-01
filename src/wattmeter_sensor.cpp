@@ -167,6 +167,19 @@ void WattmeterSensor::showRMSvalues()
   
 }
 
+void WattmeterSensor::electricalInstallation(){
+  //Intslacao trifasica
+  if(filteredVoltsL1>200 && filteredVoltsL2>200 && filteredVoltsL3 >200){
+      myInstallation = 3;
+  }
+  
+  //Intslacao monofasica e bifasica
+  if(filteredVoltsL1>200 && filteredVoltsL2<10 && filteredVoltsL3<10){
+      myInstallation = 1;
+  }
+
+}
+
 //MELHORAR E TESTAR PARA QUEDA DE ENERGIA(CHAMAR A CADA 0.5ms)
 void WattmeterSensor::powerOutage(float newInstVolts){
   static int cont_outage = 0;
@@ -296,3 +309,6 @@ float WattmeterSensor::getEnergy() {
   return energy;
 }
 
+int WattmeterSensor::getMyInstallation(){
+  return myInstallation;
+}

@@ -6,6 +6,8 @@ const int NUM_SAMPLES_CURRENTS_DEFAULT = 200;
 const int UNDER_VOLTAGE_DEFAULT = 5;
 const int OVER_VOLTAGE_DEFAULT = 4;
 const int OVER_CURRENT_DEFAULT = 13;
+const int MY_INSTALLATION_DEFAULT = 3;      
+
 
 const uint8_t ADDRESS_L1_DEFAULT = 0x63;
 const uint8_t ADDRESS_L2_DEFAULT = 0X6C;
@@ -38,7 +40,8 @@ private:
     int currentIndex = 0;                    // Current index in the buffer
     int currentIndexcurrents = 0;            // Current index in the buffer
     int c = 0;                               // Counter used in the loop function
-
+    int myInstallation = MY_INSTALLATION_DEFAULT;     
+    
     float filteredVoltsL1;                    // Filtered value of voltage
     float filteredVoltsL2; 
     float filteredVoltsL3; 
@@ -47,7 +50,8 @@ private:
     float filteredCurrentsL3;
     float PowerApparentL1;                    // Variable that receives the value of the apparent power
     float PowerActive;                      // Variable that receives the value of the active power
-    float energy;                           // Variable to store the accumulated energy in kWh        
+    float energy;                           // Variable to store the accumulated energy in kWh  
+     
 
     unsigned long previousPrintMillis = 0;   // Variable to store the time of the last print
     unsigned long previousCalcMillis = 0;    // Variable to store the time of the last execution of the calculation functions
@@ -64,7 +68,8 @@ public:
     void showRMSvalues();
     void calculateEnergy();
     void initWattmeter(config_wattmeter &params); 
-    void powerOutage(float newInstVolts); 
+    void powerOutage(float newInstVolts);
+    void electricalInstallation(); 
 
     void setNumSamples(int newSamples);
     void setnumSamplescurrents(int newSamplescurrents);
@@ -74,8 +79,9 @@ public:
     
     float getFilteredVolts(int line) ;
     float getFilteredCurrents(int line) ; 
-    float getPowerApparent() ;
-    float getEnergy() ;
+    int getMyInstallation();
+    float getPowerApparent();
+    float getEnergy();
 };
 
 extern WattmeterSensor myWattmeter;
