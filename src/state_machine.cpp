@@ -46,6 +46,7 @@ int funcaoInterrupcao()
 	cont_principal++;
 	cont_atualiza++;
 	cont_interfaceUsuario++;
+	static int newCurrent = 0;
 
 	// a cada 166 us (6kHz)
 	DataStruct.statePinDC = gpio_get_level(PIN_TRIG_DC);
@@ -67,13 +68,13 @@ int funcaoInterrupcao()
 		}
 
 		cont_principal = 0;
-		medida_proximidade = adc1_get_raw(CHANNEL_PROXIMIDADE);     // Faz a leitura analogica do proximidade (3)
-		cabo_conectado = correnteCabo(medida_proximidade);		 // Identificacao do Cabo (4)
+		//medida_proximidade = adc1_get_raw(CHANNEL_PROXIMIDADE);     // Faz a leitura analogica do proximidade (3)
+		cabo_conectado = 32; //correnteCabo(medida_proximidade);		 // Identificacao do Cabo (4)
 		estado_veiculo = defineEstado(media_piloto);           // Determina o Estado (5)
 	
 		if(DataStruct.currentSetByUser < cabo_conectado && DataStruct.currentSetByUser<=32){ //logica de maior corrente suportada 
 			corrente_maxima = DataStruct.currentSetByUser;
-		}else if(cabo_conectado<32){
+		}else if(cabo_conectado<=32){
 			corrente_maxima = cabo_conectado;
 			}else{corrente_maxima = 32;}
 	
@@ -99,8 +100,26 @@ int funcaoInterrupcao()
 			if (cont_interfaceUsuario >= 6000) // a cada 1000 ms (1 Hz)
 			{ 
 				//acendeLed();
+				
+				// newCurrent++;
+
+				// if(newCurrent>=10){
+				// 	DataStruct.currentSetByUser = 20;
+				// }
+
+				// if(newCurrent>=20){
+				// 	DataStruct.currentSetByUser = 16;
+				// }
+
+				// if(newCurrent>=30){
+				// 	DataStruct.currentSetByUser = 40;
+				// 	newCurrent = 0;
+				// }
+
 				printTela();
 				cont_interfaceUsuario = 0;
+
+
 			}
 		}
 	}
@@ -307,6 +326,7 @@ int chargingStationMain(int estado, int corrente_max)
 	static bool bloqueio_razao_ciclica=false;		//Variável que bloqueia a alteração da razão cíclica por 5 segundos
 	static bool iniciar_recarga=false;					//Variável para autorizar o inicio de recarga
 	static int historyCurrent = 0;					//Salva a ultima alteracão de corrente
+	static bool historyStart = false;
 	
 	iniciar_recarga = DataStruct.startChargingByUser;
 	DataStruct.Contador_C = cont;
@@ -402,7 +422,9 @@ int chargingStationMain(int estado, int corrente_max)
 	//Lógica caso a razão cíclica deva ser atualizada
 	if(bloqueio_razao_ciclica==false && (corrente_da_estacao != historyCurrent))
 	{	
+	
 		historyCurrent = corrente_da_estacao;
+		DataStruct.historyCurrent = historyCurrent;
 		if(corrente_da_estacao>=6 && corrente_da_estacao<=32){
 				razao = ((corrente_da_estacao/0.6)*(1023))/100;
 		}else{razao = 1023;}
@@ -496,8 +518,11 @@ void printTela(){
 	
 	// Serial.print(">Cabo: ");
 	// Serial.println(DataStruct.cableCurrent);
-	printf("Cabo: %d\n", DataStruct.cableCurrent);
-	printf("AD PP: %d\n\n", DataStruct.Ad_Proximidade);
+	printf("cableCurrent: %d\n", DataStruct.cableCurrent);
+	printf("currentSetByUser: %d\n", DataStruct.currentSetByUser);
+	printf("maximumCurrent: %d\n\n", DataStruct.maximumCurrent);
+	printf("stationCurrent: %d\n", DataStruct.stationCurrent);
+	printf("History: %d\n\n", DataStruct.historyCurrent);
 	// printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
 	// printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
 	

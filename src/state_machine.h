@@ -56,6 +56,7 @@ struct GlobalStruct
     // Variaveis externas
     int currentSetByUser; // Valor de corrente definido pelo usuário
     int startChargingByUser;  // Se for 1, coloca a razao ciclica para o valor de corrente existente, caso contário razao em 100%
+    int historyCurrent;
 
     // Variaveis externas só para printar na tela
     int Contador_C;  // salva valor utilizado para transicao 10.2
