@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include "wattmeter_sensor.h"
 #include <vector>
+gpio_num_t PINO_TESTE_POWER_OUTAGE = GPIO_NUM_37;
 
 ACS37800 mySensor;            // Create an object of the ACS37800 class
 WattmeterSensor myWattmeter;  // Create an object of the WattmeterSensor class
@@ -120,15 +121,19 @@ void WattmeterSensor::showRMSvalues()
 {
   float voltsL1 = 0.0;
   float ampsL1 = 0.0;
-
   float voltsL2 = 0.0;
   float ampsL2 = 0.0;
-
   float voltsL3 = 0.0;
   float ampsL3 = 0.0;
   
+  float instVoltsL1 = 0.0;
+  float instAmpsL1 = 0.0;
+  float instWattsL1 = 0.0;
+
   mySensor.begin(ADRESS_L1);
   mySensor.readRMS(&voltsL1, &ampsL1); // Read the RMS voltage and current
+  mySensor.readInstantaneous(&instVoltsL1, &instAmpsL1, &instWattsL1); // Read the instantaneous
+  powerOutage(instVoltsL1); // Call function power Outage
   Wire.endTransmission();
 
   // mySensor.begin(ADRESS_L2);
@@ -189,6 +194,38 @@ void WattmeterSensor::initWattmeter(config_wattmeter &params){
     mySensor.setSenseRes(params.senseRes);
     mySensor.setDividerRes(params.DividerRes);
 
+}
+
+// Detect installation type
+void WattmeterSensor::electricalInstallation(){
+  //Intslacao trifasica
+  if(filteredVoltsL1>200 && filteredVoltsL2>200 && filteredVoltsL3 >200){
+      myInstallation = 3;
+  }
+  
+  //Intslacao monofasica e bifasica
+  if(filteredVoltsL1>200 && filteredVoltsL2<10 && filteredVoltsL3<10){
+      myInstallation = 1;
+  }
+}
+
+// Detects power outage (chamada a cada 0.5 ms)
+void WattmeterSensor::powerOutage(float newInstVolts){
+  static int cont_outage = 0;
+  static int number_measurements = 10;
+  //TODO ajustar number_measurements e o tempo de chamada
+  if (newInstVolts >= -10 && newInstVolts <= 10) {
+      cont_outage++;
+  } else {
+      cont_outage = 0; // Reinicia o contador se a tensão não estiver dentro do intervalo
+  }
+
+  //ocorreu uma queda de energia
+  if (cont_outage >= number_measurements) {  
+      gpio_set_level(PINO_TESTE_POWER_OUTAGE, true); //
+      cont_outage = 0;
+     //
+  }else{gpio_set_level(PINO_TESTE_POWER_OUTAGE, false); }
 }
 
 // Change the value of numSamples
@@ -265,3 +302,7 @@ float WattmeterSensor::getEnergy() {
   return energy;
 }
 
+// Returns installation type
+int WattmeterSensor::getMyInstallation(){
+  return myInstallation;
+}

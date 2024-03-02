@@ -495,11 +495,20 @@ void leBotao(){
 
 //Funcao para controle do dispositivo de manobra(relés)
 void dispositivoDeManobra(int acao){
+	//Instalacoes monofasicas e bifasicas (F-N) ou (F-F)
+	int installation = myWattmeter.getMyInstallation();
 	if(acao == 1){
-		gpio_set_level(RELE_L1, true); // Liga Dispositivo de manobra
-		gpio_set_level(RELE_L2, true); // Liga Dispositivo de manobra
-		gpio_set_level(RELE_L3, true); // Liga Dispositivo de manobra
-		gpio_set_level(RELE_N, true); // Liga Dispositivo de manobra
+		if(installation == 1){
+			gpio_set_level(RELE_L1, true); // Liga Dispositivo de manobra
+			gpio_set_level(RELE_N, true); // Liga Dispositivo de manobra
+		}
+		if(installation == 3){
+			gpio_set_level(RELE_L1, true); // Liga Dispositivo de manobra
+			gpio_set_level(RELE_L2, true); // Liga Dispositivo de manobra
+			gpio_set_level(RELE_L3, true); // Liga Dispositivo de manobra
+			gpio_set_level(RELE_N, true); // Liga Dispositivo de manobra
+		}
+	
 	}else{
 		gpio_set_level(RELE_L1, false); // Desliga Dispositivo de manobra
 		gpio_set_level(RELE_L2, false); // Desliga Dispositivo de manobra
@@ -545,6 +554,7 @@ void printTela(){
 	//printf("Contador BT: %d\n", DataStruct.Contador_BT);
 
 #ifdef COMPILE_WATT
+	printf("Instalação: %d\n",myWattmeter.getMyInstallation());
 	printf("Tensão L1: %0.3f   Corrente L1: %0.3f", myWattmeter.getFilteredVolts(1), myWattmeter.getFilteredCurrents(1));
 	printf("  Pot L1: %0.3f", myWattmeter.getPowerApparent());
 	
@@ -607,6 +617,9 @@ void stateMachineControl(int state, int dutyCycle){
 		DataStruct.mcCharging = false;		
 		DataStruct.mcFaulted = false;
 #ifdef COMPILE_OCPP
+		//TODO Colocar uma verificação de acordo com a razao o motivo da parada
+		// Veiculo encerra recarga (dutyCycle -> mantem)
+		// Estacao encerra (dutyCycle -> 100%)
 		stopTransaction();
 #endif
 	}

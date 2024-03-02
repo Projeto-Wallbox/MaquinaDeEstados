@@ -31,8 +31,8 @@ const int connectorId = 1;
 
 #define SENSE_RES 2550
 #define DIVIDER_RES 4000000
-#define NUM_SAMPLES 200    
-#define NUM_SAMPLES_CURRENTS 200
+#define NUM_SAMPLES 400    
+#define NUM_SAMPLES_CURRENTS 400
 #define UNDER_VOLTAGE 5
 #define OVER_VOLTAGE 4
 #define OVER_CURRENT 13
@@ -84,7 +84,7 @@ gpio_num_t LED_D = GPIO_NUM_18;
 gpio_num_t START_RECHARGER_BT = GPIO_NUM_9;
 gpio_num_t PIN_FAULT = GPIO_NUM_4;
 gpio_num_t PIN_TRIG_DC = GPIO_NUM_36;
-gpio_num_t PIN_TRIG_AC = GPIO_NUM_37;
+gpio_num_t PIN_TRIG_AC = GPIO_NUM_38;
 
 adc1_channel_t CHANNEL_PILOT = ADC1_CHANNEL_7;
 adc1_channel_t CHANNEL_PROXIMIDADE = ADC1_CHANNEL_6;
@@ -105,9 +105,6 @@ int Razao_Ciclica_PWM = 1023;					// Variavel que armazena valor da razao ciclli
 // FUNCAO DE INTERRUPCAO DA ME
 void timer_callback(void *param)
 {
-	// static bool teste_freq = false;
-	// teste_freq = !teste_freq;
-	// gpio_set_level(GPIO_NUM_23, teste_freq); 
 	Razao_Ciclica_PWM = funcaoInterrupcao();
 	ESP_ERROR_CHECK(ledc_set_duty(SPEED_MODE_TIMER, LEDC_CHANNEL_0, Razao_Ciclica_PWM));
 	ESP_ERROR_CHECK(ledc_update_duty(SPEED_MODE_TIMER, LEDC_CHANNEL_0));
@@ -145,12 +142,19 @@ void monitorCurrentTask(void *pvParameters) {
 void wattmeterTask(void *pvParameters) {
     int cont_pot = 0;
 		int cont_meterValue = 0;
+		int cont_defineIstallation = 0;
 
 		while (1) {
-				
-        myWattmeter.showRMSvalues();
 				cont_pot++;
 				cont_meterValue++;
+				
+        myWattmeter.showRMSvalues();
+
+				//em um segundo pega os valores RMS e define o tipo de instalação
+        if(cont_defineIstallation<=2000){
+					//myWattmeter.electricalInstallation();
+					cont_defineIstallation++;
+				}
   
         if(cont_pot==1000){
           myWattmeter.calculateEnergy(); 
@@ -159,16 +163,17 @@ void wattmeterTask(void *pvParameters) {
 
 				//myWattmeter.getFilteredVolts(1)
 				if(cont_meterValue==10000){
+					//myWattmeter.electricalInstallation();
+
 #ifdef COMPILE_OCPP
           addMeterValueInput([](){return myWattmeter.getFilteredVolts(1);}, "Voltage","V",nullptr, nullptr,connectorId);
-          cont_meterValue = 0;
 #endif
         }
         // UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
         // Serial.print("Espaço livre mínimo da pilha: ");
         // Serial.println(uxHighWaterMark);
 
-        vTaskDelay(pdMS_TO_TICKS(1)); // Espera por 1 ms
+        vTaskDelay(pdMS_TO_TICKS(1)); // Espera por 0.5 ms
     }
 }
 #endif
@@ -232,6 +237,7 @@ void setup()
 	gpio_set_direction(RELE_L2, GPIO_MODE_OUTPUT);			 // Define pino como saida
 	gpio_set_direction(RELE_L3, GPIO_MODE_OUTPUT);			 // Define pino como saida
 	gpio_set_direction(START_RECHARGER_BT, GPIO_MODE_INPUT); // Define pino como entrada
+	gpio_set_direction(GPIO_NUM_37, GPIO_MODE_OUTPUT); // Define pino como saida
 	
 	// CONFIGURA OS CANAIS ADC ---------------------------------------------------------------------------
 	esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_12Bit, 0, &adc_chars);
