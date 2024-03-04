@@ -326,9 +326,12 @@ int chargingStationMain(int estado, int corrente_max)
 	static bool bloqueio_razao_ciclica=false;		//Variável que bloqueia a alteração da razão cíclica por 5 segundos
 	static bool iniciar_recarga=false;					//Variável para autorizar o inicio de recarga
 	static int historyCurrent = 0;					//Salva a ultima alteracão de corrente
-	static bool historyStart = false;
+	static bool testeStart = false;
+	
 	
 	iniciar_recarga = DataStruct.startChargingByUser;
+
+
 	DataStruct.Contador_C = cont;
 	DataStruct.stationCurrent = corrente_da_estacao; 
 //******Lógica que decide qual será a corrente máxima da estação e o estado da contatora*********************
@@ -399,9 +402,9 @@ int chargingStationMain(int estado, int corrente_max)
 
 				k=0;
 				bloqueio_contatora=false;
-				//corrente_da_estacao=0; 
-				//estadoDispositivoManobra=false;
-				//dispositivoDeManobra(estadoDispositivoManobra);
+				corrente_da_estacao=0; 
+				estadoDispositivoManobra=false;
+				dispositivoDeManobra(estadoDispositivoManobra);
 			}
 		}
 	}
@@ -409,7 +412,15 @@ int chargingStationMain(int estado, int corrente_max)
 	//************Codificação da corrente máxima da estação através da razão cíclica do PWM***********************
 	//Lógica caso a estação não esteja pronta para fornecer energia
 	//Lógica do bloqueio da razão cíclica
-	if(bloqueio_razao_ciclica==true)
+	
+	// if(historyCurrent == 0 && corrente_da_estacao !=0){
+	// 		testeStart = true;
+	// }else if(historyCurrent == !0 && corrente_da_estacao !=0){
+	// 		testeStart = false;
+	// }
+
+	
+	if(bloqueio_razao_ciclica==true && testeStart == false)
 	{
 		m++;
 		if(m>=5000)
