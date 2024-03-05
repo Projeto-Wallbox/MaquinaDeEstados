@@ -152,7 +152,7 @@ void wattmeterTask(void *pvParameters) {
 
 				//em um segundo pega os valores RMS e define o tipo de instalação
         if(cont_defineIstallation<=2000){
-					//myWattmeter.electricalInstallation();
+					myWattmeter.electricalInstallation();
 					cont_defineIstallation++;
 				}
   
@@ -173,7 +173,7 @@ void wattmeterTask(void *pvParameters) {
         // Serial.print("Espaço livre mínimo da pilha: ");
         // Serial.println(uxHighWaterMark);
 
-        vTaskDelay(pdMS_TO_TICKS(1)); // Espera por 0.5 ms
+        vTaskDelay(pdMS_TO_TICKS(0.5)); // Espera por 0.5 ms
     }
 }
 #endif

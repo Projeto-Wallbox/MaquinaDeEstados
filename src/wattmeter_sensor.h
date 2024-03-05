@@ -40,6 +40,7 @@ private:
     int currentIndexcurrents = 0;            // Current index in the buffer
     int c = 0;                               // Counter used in the loop function
     int myInstallation = MY_INSTALLATION_DEFAULT;     
+    bool powerOutageFlag = false;
 
     float filteredVoltsL1;                    // Filtered value of voltage
     float filteredVoltsL2; 
@@ -74,12 +75,15 @@ public:
     void setUnderVoltage(int newUnderVoltage);
     void setOverVoltage(int newOverVoltage);
     void setOverCurrent(int newOverCurrent);
+    void setPowerOutageFlag(bool newValue);
     
     float getFilteredVolts(int line);
     float getFilteredCurrents(int line); 
     float getPowerApparent();
     float getEnergy();
     int getMyInstallation();
+    bool getPowerOutageFlag();
+    
 };
 
 extern WattmeterSensor myWattmeter;

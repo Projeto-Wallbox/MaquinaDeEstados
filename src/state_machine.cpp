@@ -38,15 +38,17 @@ int funcaoInterrupcao()
 	// Variaveis da Funcao principal da Estacao
 	static int medida_proximidade = 0;
 	static int estado_veiculo = 12;
-	static int cabo_conectado = 0;
-	static int razao_ciclica = 1000;
-	static int corrente_maxima;
+	static int razao_ciclica = 1023;
+	
+	static int corrente_maxima = 32;
+	static int cabo_conectado = 32;   // Verificar 
+	static int currentInstallation = 32;
 
 	// measure_one++;
 	cont_principal++;
 	cont_atualiza++;
 	cont_interfaceUsuario++;
-	static int newCurrent = 0;
+	static int contNewCurrent = 0;  //Apenas para teste de alteração de corrente
 
 	// a cada 166 us (6kHz)
 	DataStruct.statePinDC = gpio_get_level(PIN_TRIG_DC);
@@ -69,14 +71,18 @@ int funcaoInterrupcao()
 
 		cont_principal = 0;
 		//medida_proximidade = adc1_get_raw(CHANNEL_PROXIMIDADE);     // Faz a leitura analogica do proximidade (3)
-		cabo_conectado = 32; //correnteCabo(medida_proximidade);		 // Identificacao do Cabo (4)
+		//cabo_conectado = 32; //correnteCabo(medida_proximidade);		 // Identificacao do Cabo (4)
 		estado_veiculo = defineEstado(media_piloto);           // Determina o Estado (5)
 	
-		if(DataStruct.currentSetByUser < cabo_conectado && DataStruct.currentSetByUser<=32){ //logica de maior corrente suportada 
-			corrente_maxima = DataStruct.currentSetByUser;
-		}else if(cabo_conectado<=32){
+
+		// Maior corrente suportada 
+		if (DataStruct.currentSetByUser < currentInstallation && DataStruct.currentSetByUser <= cabo_conectado) {
+      corrente_maxima = DataStruct.currentSetByUser;
+    } else if (currentInstallation < DataStruct.currentSetByUser && currentInstallation <= cabo_conectado) {
+      corrente_maxima = currentInstallation;
+    } else {
 			corrente_maxima = cabo_conectado;
-			}else{corrente_maxima = 32;}
+    }
 	
 		razao_ciclica = chargingStationMain(estado_veiculo, corrente_maxima); // MAQUINAS DE ESTADOS, CONTATORA E CALCULO DA RAZAO CICLICA    (6 e 7)
 	}
@@ -100,26 +106,20 @@ int funcaoInterrupcao()
 			if (cont_interfaceUsuario >= 6000) // a cada 1000 ms (1 Hz)
 			{ 
 				//acendeLed();
-				
-				// newCurrent++;
+				// if(contNewCurrent<=20){
+				// 	contNewCurrent++;
+				// }
 
-				// if(newCurrent>=10){
+				// if(contNewCurrent == 10){
+				// 	DataStruct.currentSetByUser = 25;
+				// }
+
+				// if(contNewCurrent == 12){
 				// 	DataStruct.currentSetByUser = 20;
-				// }
-
-				// if(newCurrent>=20){
-				// 	DataStruct.currentSetByUser = 16;
-				// }
-
-				// if(newCurrent>=30){
-				// 	DataStruct.currentSetByUser = 40;
-				// 	newCurrent = 0;
 				// }
 
 				printTela();
 				cont_interfaceUsuario = 0;
-
-
 			}
 		}
 	}
@@ -315,51 +315,56 @@ int defineEstado(int media_x1)
 int chargingStationMain(int estado, int corrente_max)
 {	//Entra nessa lógica 1 vez a cada ciclo do PWM (1 kHz)
 	
-	static int razao=1023;											//Razão cíclica do PWM
-	static int k=0;															//Contador do bloqueio da contatora
-	static int m=0;												      //Contador do bloqueio da razão cíclica
-	static int corrente_da_estacao=0;			      //Corrente máxima que a estaçao irá fornecer
+	static int razao = 1023;											//Razão cíclica do PWM
+	static int k = 0;															//Contador do bloqueio da contatora
+	static int m = 0;												      //Contador do bloqueio da razão cíclica
+	static int corrente_da_estacao = 0;			      //Corrente máxima que a estaçao irá fornecer
 	static int cont = 0;
-	static bool estado_F=false;									//Altera o valor da razão cíclica para 0 quando true (estação com algum erro/não estiver pronta)
-	static bool estadoDispositivoManobra=false;	//Estado do dispositivo de manobra
-	static bool bloqueio_contatora=false;				//Variável que bloqueia a contatora por 6 segundo caso entre no modo ventilação
-	static bool bloqueio_razao_ciclica=false;		//Variável que bloqueia a alteração da razão cíclica por 5 segundos
-	static bool iniciar_recarga=false;					//Variável para autorizar o inicio de recarga
+	static bool estado_F = false;									//Altera o valor da razão cíclica para 0 quando true (estação com algum erro/não estiver pronta)
+	static bool estadoDispositivoManobra = false;	//Estado do dispositivo de manobra
+	static bool bloqueio_contatora = false;				//Variável que bloqueia a contatora por 6 segundo caso entre no modo ventilação
+	static bool bloqueio_razao_ciclica = false;		//Variável que bloqueia a alteração da razão cíclica por 5 segundos
+	static bool iniciar_recarga = false;					//Variável para autorizar o inicio de recarga
 	static int historyCurrent = 0;					//Salva a ultima alteracão de corrente
-	static bool testeStart = false;
+	static bool historyStart = false;					//Salva a ultima alteracão de iniciar recarga
+	static bool changedStart = false;               // 
 	
 	
 	iniciar_recarga = DataStruct.startChargingByUser;
-
+	//Verifica de houve um inicio ou fim de recarga pelo usuário
+	if(historyStart != iniciar_recarga){
+		changedStart = true;
+		historyStart = iniciar_recarga;
+	}
 
 	DataStruct.Contador_C = cont;
 	DataStruct.stationCurrent = corrente_da_estacao; 
-//******Lógica que decide qual será a corrente máxima da estação e o estado da contatora*********************
+	//******Lógica que decide qual será a corrente máxima da estação e o estado da contatora*********************
 	//Lógica para os Estados: A, B, E e F ou cabo desconectado
-	if((estado==12)||(estado==9)||(estado==0)||(estado==-12)||(corrente_max==0))			
+	if((estado == 12)||(estado == 9)||(estado == 0)||(estado == -12)||(corrente_max == 0))			
 	{
-		estadoDispositivoManobra=false;
+		estadoDispositivoManobra = false;
 		dispositivoDeManobra(estadoDispositivoManobra);
-		bloqueio_contatora=false;
+		bloqueio_contatora = false;
 		k=0;
 		//cont = 0;
 		if(estado == 9 && iniciar_recarga== true)		//Estado B2
 		{
-			corrente_da_estacao=corrente_max;
+			corrente_da_estacao = corrente_max;
 		}
 		else
 		{// Estado B1
-			corrente_da_estacao=0;
+			corrente_da_estacao = 0;
 		}
 
-		if(estado==9){cont = 0;}
-		if(estado==12 ||estado == -12 || estado == 0){DataStruct.startChargingByUser = 0;}
+		if(estado == 9){cont = 0;}
+		if(estado == 12 ||estado == -12 || estado == 0){DataStruct.startChargingByUser = 0;}
 	}
 	//Lógica para os Estados C e D com cabo conectado
 	else
 	{	
 		//Lógica para o Estado C
-		if(estado==6 && iniciar_recarga == true)
+		if(estado == 6 && iniciar_recarga == true)
 		{
 			k=0;
 			corrente_da_estacao=corrente_max;
@@ -384,70 +389,83 @@ int chargingStationMain(int estado, int corrente_max)
 							cont++;
 					}
 			//Lógica para transição do Estado C para o D com a contatora já fechada
-			if((bloqueio_contatora==true)&&(estado==3))
+			if((bloqueio_contatora == true)&&(estado == 3))
 			{
 				k++;
-				corrente_da_estacao=0;
-				estadoDispositivoManobra=true;
+				corrente_da_estacao = 0;
+				estadoDispositivoManobra = true;
 				dispositivoDeManobra(estadoDispositivoManobra);
-				if(k>=6000)			//Lógica para fazer esperar 6 segundos após a transição do Estado C para o D com a contatora já fechada
+				if(k >= 6000)			//Lógica para fazer esperar 6 segundos após a transição do Estado C para o D com a contatora já fechada
 				{
-					bloqueio_contatora=false;
-					k=0;
+					bloqueio_contatora = false;
+					k = 0;
 				}
 			}
 			//Lógica para 6 segundos após a transição do Estado C para o D ou contatora aberta durante a transição
 			else
 			{
 
-				k=0;
-				bloqueio_contatora=false;
-				corrente_da_estacao=0; 
-				estadoDispositivoManobra=false;
+				k = 0;
+				bloqueio_contatora = false;
+				corrente_da_estacao = 0; 
+				estadoDispositivoManobra = false;
 				dispositivoDeManobra(estadoDispositivoManobra);
 			}
 		}
 	}
 
+	if(myWattmeter.getPowerOutageFlag()==true){
+		corrente_da_estacao = 0;
+		//myWattmeter.setPowerOutageFlag(false);
+	}
 	//************Codificação da corrente máxima da estação através da razão cíclica do PWM***********************
 	//Lógica caso a estação não esteja pronta para fornecer energia
 	//Lógica do bloqueio da razão cíclica
-	
-	// if(historyCurrent == 0 && corrente_da_estacao !=0){
-	// 		testeStart = true;
-	// }else if(historyCurrent == !0 && corrente_da_estacao !=0){
-	// 		testeStart = false;
-	// }
 
-	
-	if(bloqueio_razao_ciclica==true && testeStart == false)
+	if(bloqueio_razao_ciclica == true)
 	{
 		m++;
-		if(m>=5000)
+		if(m >= 5000)
 		{
-			bloqueio_razao_ciclica=false;
-			m=0;
+			bloqueio_razao_ciclica = false;
+			m = 0;
 		}
 	}
 
 	//Lógica caso a razão cíclica deva ser atualizada
-	if(bloqueio_razao_ciclica==false && (corrente_da_estacao != historyCurrent))
+	if(bloqueio_razao_ciclica == false && (corrente_da_estacao != historyCurrent))
 	{	
-	
 		historyCurrent = corrente_da_estacao;
 		DataStruct.historyCurrent = historyCurrent;
 		if(corrente_da_estacao>=6 && corrente_da_estacao<=32){
 				razao = ((corrente_da_estacao/0.6)*(1023))/100;
 		}else{razao = 1023;}
 		
-		bloqueio_razao_ciclica=true;
-	}
+		//Bloqueia a alteração da razão cíclica apenas
+		//se foi alterado a corrente durante a recarga
+		// if(changedStart == true){
+		// 	bloqueio_razao_ciclica = false;
+		// 	changedStart == false;
+		// }
+		// else if(changedStart == false && iniciar_recarga == true)
+		// {
+		// 	bloqueio_razao_ciclica = true;
+		// }
 
+		bloqueio_razao_ciclica = true;
+		if(changedStart == true){
+			bloqueio_razao_ciclica = false;
+			changedStart == false;
+		}
+	}
+	
 	//Mantém a razão cíclica em 0%, enquando o erro persistir
 	if(DataStruct.state_F == 1){
 		razao = 0;
 	}
+
 	return razao;
+
 }
 
 //Funcao para controle dos led indicadores ()
@@ -533,22 +551,23 @@ void printTela(){
 	// Serial.print(">Estado: ");
 	// Serial.println(DataStruct.vehicleState);
 	
-	printf("Estado: %d\n", DataStruct.vehicleState);
-	printf("AD CP: %d\n\n", DataStruct.Media_Piloto);
+	printf("Estado: %d\n\n", DataStruct.vehicleState);
+	//printf("AD CP: %d\n\n", DataStruct.Media_Piloto);
 	
 	// Serial.print(">Cabo: ");
 	// Serial.println(DataStruct.cableCurrent);
 	printf("cableCurrent: %d\n", DataStruct.cableCurrent);
 	printf("currentSetByUser: %d\n", DataStruct.currentSetByUser);
-	printf("maximumCurrent: %d\n\n", DataStruct.maximumCurrent);
+	printf("maximumCurrent: %d\n", DataStruct.maximumCurrent);
 	printf("stationCurrent: %d\n", DataStruct.stationCurrent);
-	printf("History: %d\n\n", DataStruct.historyCurrent);
+	printf("historyCurrent: %d\n\n", DataStruct.historyCurrent);
 	// printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
 	// printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
 	
 	// Serial.print(">Iniciar_Recarga: ");
 	// Serial.println(DataStruct.startChargingByUser);
 	printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);
+
 	
 	// Serial.print(">Razao: ");
 	// Serial.println(DataStruct.dutyCycle);
@@ -572,17 +591,21 @@ void printTela(){
 	printf("\nTensão L2: %0.3f   Corrente L2: %0.3f", myWattmeter.getFilteredVolts(2), myWattmeter.getFilteredCurrents(2));
 	printf("\nTensão L3: %0.3f   Corrente L3: %0.3f", myWattmeter.getFilteredVolts(3), myWattmeter.getFilteredCurrents(3));
 
-	printf("\n\nEnergia: %0.3f", myWattmeter.getEnergy());
+	printf("\n\nEnergia: %0.3f\n", myWattmeter.getEnergy());
+	printf("GetPowerOutageFlag: %s\n\n", myWattmeter.getPowerOutageFlag() ? "true" : "false");
+
 #endif
 
+#ifdef COMPILE_OCPP
 	printf("\n\nAvailable: %d\n", DataStruct.mcAvailable);
 	printf("Preparing: %d\n", DataStruct.mcPreparing);
 	printf("Charging: %d\n", DataStruct.mcCharging);
 	printf("Finishing: %d\n", DataStruct.mcFinishing);
 	printf("Faulted: %d\n", DataStruct.mcFaulted);
 	printf("Tipo de falha: %s\n", DataStruct.typeError.c_str());
+#endif
 
-	printf("statePinDC: %d\n", DataStruct.statePinDC);
+	printf("\nstatePinDC: %d\n", DataStruct.statePinDC);
 	printf("statePinAC: %d", DataStruct.statePinAC);
 
 	printf("\n-----------------------------------------------------\n");

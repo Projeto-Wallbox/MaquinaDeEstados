@@ -212,9 +212,9 @@ void WattmeterSensor::electricalInstallation(){
 // Detects power outage (chamada a cada 0.5 ms)
 void WattmeterSensor::powerOutage(float newInstVolts){
   static int cont_outage = 0;
-  static int number_measurements = 10;
+  static int number_measurements = 4;
   //TODO ajustar number_measurements e o tempo de chamada
-  if (newInstVolts >= -10 && newInstVolts <= 10) {
+  if (newInstVolts >= -5 && newInstVolts <= 5) {
       cont_outage++;
   } else {
       cont_outage = 0; // Reinicia o contador se a tensão não estiver dentro do intervalo
@@ -223,9 +223,19 @@ void WattmeterSensor::powerOutage(float newInstVolts){
   //ocorreu uma queda de energia
   if (cont_outage >= number_measurements) {  
       gpio_set_level(PINO_TESTE_POWER_OUTAGE, true); //
+      powerOutageFlag = true;
       cont_outage = 0;
      //
-  }else{gpio_set_level(PINO_TESTE_POWER_OUTAGE, false); }
+  }
+
+  if(filteredVoltsL1>=200){
+    gpio_set_level(PINO_TESTE_POWER_OUTAGE, false); //
+    powerOutageFlag = false;
+  }
+  // else{
+  //   gpio_set_level(PINO_TESTE_POWER_OUTAGE, false); 
+  //   powerOutageFlag = false;
+  //   }
 }
 
 // Change the value of numSamples
@@ -305,4 +315,12 @@ float WattmeterSensor::getEnergy() {
 // Returns installation type
 int WattmeterSensor::getMyInstallation(){
   return myInstallation;
+}
+
+bool WattmeterSensor::getPowerOutageFlag(){
+  return powerOutageFlag;
+}
+
+void WattmeterSensor::setPowerOutageFlag(bool newValue){
+  powerOutageFlag = newValue;
 }
