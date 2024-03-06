@@ -173,7 +173,7 @@ void wattmeterTask(void *pvParameters) {
         // Serial.print("Espaço livre mínimo da pilha: ");
         // Serial.println(uxHighWaterMark);
 
-        vTaskDelay(pdMS_TO_TICKS(0.5)); // Espera por 0.5 ms
+        vTaskDelay(pdMS_TO_TICKS(1)); // Espera por 0.5 ms
     }
 }
 #endif
@@ -314,10 +314,12 @@ void loop()
 			bool value = (incomingByte != 0); // Converte o valor lido para true se for diferente de zero, false se for zero
 
 			if (value) {
-				DataStruct.startChargingByUser = 1;
+				DataStruct.enableButton = true;
+				//DataStruct.startChargingByUser = true;
 			} 
 			if(value == false){
-					DataStruct.startChargingByUser = 0;
+					DataStruct.enableButton = false;
+					//DataStruct.startChargingByUser = false;
 			}
 		}
 }

@@ -508,7 +508,7 @@ void leBotao(){
         cont++;
     } else {cont = 0;}
 
-    if (cont >= 1 && cont <= 5) {
+    if ((cont >= 1 && cont <= 5) && DataStruct.enableButton==true) {
         DataStruct.startChargingByUser = 1;
     }
 
@@ -516,8 +516,8 @@ void leBotao(){
         DataStruct.startChargingByUser = 0;
     }
 
-		//pressionado por 10 segundos
-		if (cont >= 100) {
+		//pressionado por 7 segundos
+		if (cont >= 70) {
         esp_restart();
     }
 }
@@ -592,7 +592,8 @@ void printTela(){
 	printf("\nTensão L3: %0.3f   Corrente L3: %0.3f", myWattmeter.getFilteredVolts(3), myWattmeter.getFilteredCurrents(3));
 
 	printf("\n\nEnergia: %0.3f\n", myWattmeter.getEnergy());
-	printf("GetPowerOutageFlag: %s\n\n", myWattmeter.getPowerOutageFlag() ? "true" : "false");
+	printf("GetPowerOutageFlag: %s\n", myWattmeter.getPowerOutageFlag() ? "true" : "false");
+	printf("enableButton: %s\n\n", DataStruct.enableButton ? "true" : "false");
 
 #endif
 

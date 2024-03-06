@@ -55,7 +55,9 @@ struct GlobalStruct
 
     // Variaveis externas
     int currentSetByUser; // Valor de corrente definido pelo usuário
-    int startChargingByUser;  // Se for 1, coloca a razao ciclica para o valor de corrente existente, caso contário razao em 100%
+    bool startChargingByUser;  // Se for true, inicia a recarga, se false finaliza
+    bool enableButton;        // Se true habilita o inicio da recarga pelo botao
+    
     int historyCurrent;
 
     // Variaveis externas só para printar na tela
