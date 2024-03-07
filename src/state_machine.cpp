@@ -51,7 +51,7 @@ int funcaoInterrupcao()
 	static int contNewCurrent = 0;  //Apenas para teste de alteração de corrente
 
 	// a cada 166 us (6kHz)
-	DataStruct.statePinDC = gpio_get_level(PIN_TRIG_DC);
+	//DataStruct.statePinDC = gpio_get_level(PIN_TRIG_DC);
   DataStruct.statePinAC = gpio_get_level(PIN_TRIG_AC);
 
 	medida_piloto = adc1_get_raw(CHANNEL_PILOT);	 // Leitura do piloto (1).																			
@@ -439,7 +439,7 @@ int chargingStationMain(int estado, int corrente_max)
 		DataStruct.historyCurrent = historyCurrent;
 		if(corrente_da_estacao>=6 && corrente_da_estacao<=32){
 				razao = ((corrente_da_estacao/0.6)*(1023))/100;
-		}else{razao = 1023;}
+		}
 		
 		//Bloqueia a alteração da razão cíclica apenas
 		//se foi alterado a corrente durante a recarga
@@ -459,6 +459,10 @@ int chargingStationMain(int estado, int corrente_max)
 		}
 	}
 	
+	if(corrente_da_estacao == 0){
+		razao = 1023;
+	}
+
 	//Mantém a razão cíclica em 0%, enquando o erro persistir
 	if(DataStruct.state_F == 1){
 		razao = 0;
@@ -603,9 +607,9 @@ void printTela(){
 	printf("Charging: %d\n", DataStruct.mcCharging);
 	printf("Finishing: %d\n", DataStruct.mcFinishing);
 	printf("Faulted: %d\n", DataStruct.mcFaulted);
-	printf("Tipo de falha: %s\n", DataStruct.typeError.c_str());
 #endif
-
+	printf("Tipo de falha: %s\n", DataStruct.typeError.c_str());
+	printf("\nstatePinDC: %d\n", DataStruct.state_F);
 	printf("\nstatePinDC: %d\n", DataStruct.statePinDC);
 	printf("statePinAC: %d", DataStruct.statePinAC);
 
@@ -678,6 +682,7 @@ void stateMachineControl(int state, int dutyCycle){
 
 void monitorFaultStatus(){
 	bool stateFault = false;
+	int contTimeFault = 0;
 
 	if(DataStruct.vehicleState==12||DataStruct.vehicleState==9||DataStruct.vehicleState==6||DataStruct.vehicleState==3){
 		stateFault = false;
@@ -697,16 +702,16 @@ void monitorFaultStatus(){
 		DataStruct.typeError = "Estado E - Curto entre CP e PE ou sem alimentação(+12 e -12)";
 	}
 	
-	// //Fuga CC detectada
-	// if(DataStruct.statePinDC == 0){
-	// 	stateFault = true;
-	// 	DataStruct.state_F = 1;
-	// 	DataStruct.typeError = "Fuga CC de 6 mA";
-	// }else{
-	// 	stateFault = false;
-	// 	DataStruct.state_F = 0;
-	// 	DataStruct.typeError = "----";
-	// }
+	//Fuga CC detectada
+	if(DataStruct.statePinDC == 0){
+		stateFault = true;
+		//DataStruct.state_F = 1;
+		DataStruct.typeError = "Fuga CC de 6 mA";
+	}else{
+		stateFault = false;
+		DataStruct.state_F = 0;
+		DataStruct.typeError = "----";
+	}
 
 	// //Fuga CA detectada
 	// if(DataStruct.statePinAC == 0){
@@ -723,5 +728,15 @@ void monitorFaultStatus(){
 	// Subtensão
 
 	//
+
+	if(stateFault == true && contTimeFault < 6000){
+		DataStruct.state_F = 1;
+		contTimeFault++;
+	}
 	
+	if(stateFault == true && contTimeFault >= 6000){
+		DataStruct.state_F = 0;
+		contTimeFault = 0;
+		stateFault = false;
+	}
 }

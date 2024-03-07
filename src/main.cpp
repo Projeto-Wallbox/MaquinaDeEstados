@@ -223,6 +223,7 @@ void setup()
 
 #ifdef COMPILE_ME
 	DataStruct.currentSetByUser = 32; // Valor de corrente externo usuario/APP/OCPP
+	DataStruct.enableButton = true;
 	DataStruct.startChargingByUser = 0;	 // valor alterado para iniciar ou encerrar recarga usuario/APP/OCPP
 
 	gpio_set_direction(PWM_PIN, GPIO_MODE_OUTPUT);			 // Define pino como saida
@@ -314,11 +315,13 @@ void loop()
 			bool value = (incomingByte != 0); // Converte o valor lido para true se for diferente de zero, false se for zero
 
 			if (value) {
-				DataStruct.enableButton = true;
+				DataStruct.statePinDC = 1;
+				//DataStruct.enableButton = true;
 				//DataStruct.startChargingByUser = true;
 			} 
 			if(value == false){
-					DataStruct.enableButton = false;
+					DataStruct.statePinDC = 0;
+					//DataStruct.enableButton = false;
 					//DataStruct.startChargingByUser = false;
 			}
 		}
