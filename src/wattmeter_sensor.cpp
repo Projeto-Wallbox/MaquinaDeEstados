@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include "wattmeter_sensor.h"
 #include <vector>
-gpio_num_t PINO_TESTE_POWER_OUTAGE = GPIO_NUM_37;
+gpio_num_t PINO_TESTE_POWER_OUTAGE = GPIO_NUM_25;
 
 ACS37800 mySensor;            // Create an object of the ACS37800 class
 WattmeterSensor myWattmeter;  // Create an object of the WattmeterSensor class

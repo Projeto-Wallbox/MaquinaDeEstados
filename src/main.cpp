@@ -61,6 +61,11 @@ adc1_channel_t CHANNEL_FAULT = ADC1_CHANNEL_6;
 gpio_num_t PIN_FAULT = GPIO_NUM_34;
 gpio_num_t PIN_TRIG_DC = GPIO_NUM_12;
 gpio_num_t PIN_TRIG_AC = GPIO_NUM_13;
+
+gpio_num_t PIN_ME = GPIO_NUM_26;
+gpio_num_t PIN_WATT = GPIO_NUM_27;
+
+
 #define SPEED_MODE_TIMER LEDC_HIGH_SPEED_MODE
 #define PIN_SDA 21
 #define PIN_SCL 22
@@ -105,9 +110,11 @@ int Razao_Ciclica_PWM = 1023;					// Variavel que armazena valor da razao ciclli
 // FUNCAO DE INTERRUPCAO DA ME
 void timer_callback(void *param)
 {
+	gpio_set_level(PIN_ME, true);
 	Razao_Ciclica_PWM = funcaoInterrupcao();
 	ESP_ERROR_CHECK(ledc_set_duty(SPEED_MODE_TIMER, LEDC_CHANNEL_0, Razao_Ciclica_PWM));
 	ESP_ERROR_CHECK(ledc_update_duty(SPEED_MODE_TIMER, LEDC_CHANNEL_0));
+	gpio_set_level(PIN_ME, false);
 }
 #endif
 
@@ -145,6 +152,7 @@ void wattmeterTask(void *pvParameters) {
 		int cont_defineIstallation = 0;
 
 		while (1) {
+				gpio_set_level(PIN_WATT, true);
 				cont_pot++;
 				cont_meterValue++;
 				
@@ -160,20 +168,16 @@ void wattmeterTask(void *pvParameters) {
           myWattmeter.calculateEnergy(); 
           cont_pot = 0;
         }
-
 				//myWattmeter.getFilteredVolts(1)
 				if(cont_meterValue==10000){
 					//myWattmeter.electricalInstallation();
-
 #ifdef COMPILE_OCPP
           addMeterValueInput([](){return myWattmeter.getFilteredVolts(1);}, "Voltage","V",nullptr, nullptr,connectorId);
 #endif
         }
-        // UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-        // Serial.print("Espaço livre mínimo da pilha: ");
-        // Serial.println(uxHighWaterMark);
-
-        vTaskDelay(pdMS_TO_TICKS(1)); // Espera por 0.5 ms
+        UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+				gpio_set_level(PIN_WATT, false);
+        vTaskDelay(pdMS_TO_TICKS(1)); // Espera por 1 ms
     }
 }
 #endif
@@ -239,6 +243,9 @@ void setup()
 	gpio_set_direction(RELE_L3, GPIO_MODE_OUTPUT);			 // Define pino como saida
 	gpio_set_direction(START_RECHARGER_BT, GPIO_MODE_INPUT); // Define pino como entrada
 	gpio_set_direction(GPIO_NUM_37, GPIO_MODE_OUTPUT); // Define pino como saida
+
+	gpio_set_direction(GPIO_NUM_25, GPIO_MODE_OUTPUT); // Define pino como saida
+
 	
 	// CONFIGURA OS CANAIS ADC ---------------------------------------------------------------------------
 	esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_12Bit, 0, &adc_chars);
@@ -315,14 +322,18 @@ void loop()
 			bool value = (incomingByte != 0); // Converte o valor lido para true se for diferente de zero, false se for zero
 
 			if (value) {
-				DataStruct.statePinDC = 1;
+				//DataStruct.statePinDC = 1;
 				//DataStruct.enableButton = true;
-				//DataStruct.startChargingByUser = true;
+				DataStruct.startChargingByUser = true;
 			} 
 			if(value == false){
-					DataStruct.statePinDC = 0;
+					//DataStruct.statePinDC = 0;
 					//DataStruct.enableButton = false;
-					//DataStruct.startChargingByUser = false;
+					DataStruct.startChargingByUser = false;
 			}
 		}
+
+
+
+
 }

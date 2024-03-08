@@ -51,8 +51,8 @@ int funcaoInterrupcao()
 	static int contNewCurrent = 0;  //Apenas para teste de alteração de corrente
 
 	// a cada 166 us (6kHz)
-	//DataStruct.statePinDC = gpio_get_level(PIN_TRIG_DC);
-  DataStruct.statePinAC = gpio_get_level(PIN_TRIG_AC);
+	DataStruct.statePinDC = 1;//gpio_get_level(PIN_TRIG_DC);
+  DataStruct.statePinAC = 1;//gpio_get_level(PIN_TRIG_AC);
 
 	medida_piloto = adc1_get_raw(CHANNEL_PILOT);	 // Leitura do piloto (1).																			
 	media_piloto = positivaPiloto(medida_piloto); // Calcula a média dos sinais (2)
@@ -62,13 +62,7 @@ int funcaoInterrupcao()
 	
 	if (cont_principal >= 6) // a cada 1 ms (1kHz)
 	{
-		//TESTE DE LEITURA DO ESTADO E0
-	  if(DataStruct.vehicleState == 0){
-			//Colocar razão ciclica para 100%
-			//Acionar o circuito de alimentação extra via capacitor/bateria
-			//printf("ACIONAR BATERIA");   /// em teste
-		}
-
+	
 		cont_principal = 0;
 		//medida_proximidade = adc1_get_raw(CHANNEL_PROXIMIDADE);     // Faz a leitura analogica do proximidade (3)
 		//cabo_conectado = 32; //correnteCabo(medida_proximidade);		 // Identificacao do Cabo (4)
@@ -106,16 +100,17 @@ int funcaoInterrupcao()
 			if (cont_interfaceUsuario >= 6000) // a cada 1000 ms (1 Hz)
 			{ 
 				//acendeLed();
-				// if(contNewCurrent<=20){
+				// if(DataStruct.vehicleState == 6 && contNewCurrent<=20){
 				// 	contNewCurrent++;
 				// }
 
-				// if(contNewCurrent == 10){
+				// if(contNewCurrent == 3){
 				// 	DataStruct.currentSetByUser = 25;
 				// }
 
-				// if(contNewCurrent == 12){
+				// if(contNewCurrent == 6){
 				// 	DataStruct.currentSetByUser = 20;
+
 				// }
 
 				printTela();
@@ -324,12 +319,14 @@ int chargingStationMain(int estado, int corrente_max)
 	static bool estadoDispositivoManobra = false;	//Estado do dispositivo de manobra
 	static bool bloqueio_contatora = false;				//Variável que bloqueia a contatora por 6 segundo caso entre no modo ventilação
 	static bool bloqueio_razao_ciclica = false;		//Variável que bloqueia a alteração da razão cíclica por 5 segundos
+	
 	static bool iniciar_recarga = false;					//Variável para autorizar o inicio de recarga
 	static int historyCurrent = 0;					//Salva a ultima alteracão de corrente
 	static bool historyStart = false;					//Salva a ultima alteracão de iniciar recarga
 	static bool changedStart = false;               // 
 	
-	
+	DataStruct.changedStart = changedStart;
+	DataStruct.historyStart = historyStart;
 	iniciar_recarga = DataStruct.startChargingByUser;
 	//Verifica de houve um inicio ou fim de recarga pelo usuário
 	if(historyStart != iniciar_recarga){
@@ -420,46 +417,32 @@ int chargingStationMain(int estado, int corrente_max)
 	}
 	//************Codificação da corrente máxima da estação através da razão cíclica do PWM***********************
 	//Lógica caso a estação não esteja pronta para fornecer energia
-	//Lógica do bloqueio da razão cíclica
-
-	if(bloqueio_razao_ciclica == true)
-	{
-		m++;
-		if(m >= 5000)
-		{
-			bloqueio_razao_ciclica = false;
-			m = 0;
-		}
-	}
-
+	
 	//Lógica caso a razão cíclica deva ser atualizada
 	if(bloqueio_razao_ciclica == false && (corrente_da_estacao != historyCurrent))
 	{	
 		historyCurrent = corrente_da_estacao;
 		DataStruct.historyCurrent = historyCurrent;
 		if(corrente_da_estacao>=6 && corrente_da_estacao<=32){
-				razao = ((corrente_da_estacao/0.6)*(1023))/100;
+			razao = ((corrente_da_estacao/0.6)*(1023))/100;
 		}
-		
-		//Bloqueia a alteração da razão cíclica apenas
-		//se foi alterado a corrente durante a recarga
-		// if(changedStart == true){
-		// 	bloqueio_razao_ciclica = false;
-		// 	changedStart == false;
-		// }
-		// else if(changedStart == false && iniciar_recarga == true)
-		// {
-		// 	bloqueio_razao_ciclica = true;
-		// }
 
 		bloqueio_razao_ciclica = true;
-		if(changedStart == true){
+	}
+
+	if(bloqueio_razao_ciclica == true)
+	{
+		m++;
+		if(m >= 5000 || changedStart == true)
+		{
 			bloqueio_razao_ciclica = false;
-			changedStart == false;
+			changedStart = false;
+			m = 0;
 		}
 	}
 	
 	if(corrente_da_estacao == 0){
+		changedStart = false;
 		razao = 1023;
 	}
 
@@ -608,10 +591,13 @@ void printTela(){
 	printf("Finishing: %d\n", DataStruct.mcFinishing);
 	printf("Faulted: %d\n", DataStruct.mcFaulted);
 #endif
-	printf("Tipo de falha: %s\n", DataStruct.typeError.c_str());
-	printf("\nstatePinDC: %d\n", DataStruct.state_F);
-	printf("\nstatePinDC: %d\n", DataStruct.statePinDC);
-	printf("statePinAC: %d", DataStruct.statePinAC);
+	// printf("Tipo de falha: %s\n", DataStruct.typeError.c_str());
+	// printf("\nstatePinDC: %d\n", DataStruct.state_F);
+	// printf("\nstatePinDC: %d\n", DataStruct.statePinDC);
+	// printf("statePinAC: %d", DataStruct.statePinAC);
+	printf("\nChangedStart: %d\n", DataStruct.changedStart);
+	printf("historyStart: %d\n", DataStruct.historyStart);
+
 
 	printf("\n-----------------------------------------------------\n");
 }
