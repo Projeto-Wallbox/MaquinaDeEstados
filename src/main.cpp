@@ -59,7 +59,7 @@ gpio_num_t PIN_FAULT = GPIO_NUM_34;
 gpio_num_t PIN_TRIG_DC = GPIO_NUM_12;
 gpio_num_t PIN_TRIG_AC = GPIO_NUM_13;
 
-gpio_num_t PINO_TESTE_POWER_OUTAGE = GPIO_NUM_25;
+gpio_num_t PIN_TEST_OUTAGE = GPIO_NUM_25;
 gpio_num_t PIN_ME = GPIO_NUM_26;
 gpio_num_t PIN_WATT = GPIO_NUM_27;
 
@@ -137,10 +137,9 @@ void wattmeterTask(void *pvParameters) {
   
         if(cont_pot>=1000){
           myWattmeter.calculateEnergy(); 
-					printf("Tensão L1: %0.3f", myWattmeter.getFilteredVolts(1));
-
           cont_pot = 0;
         }
+
 				if(cont_meterValue==10000){
 					//myWattmeter.electricalInstallation();
 #ifdef COMPILE_OCPP
@@ -209,7 +208,7 @@ void setup()
 	gpio_set_direction(RELE_L3, GPIO_MODE_OUTPUT);			 // Define pino como saida
 	gpio_set_direction(START_RECHARGER_BT, GPIO_MODE_INPUT); // Define pino como entrada
 	
-	gpio_set_direction(PINO_TESTE_POWER_OUTAGE, GPIO_MODE_OUTPUT); // Define pino como saida
+	gpio_set_direction(PIN_TEST_OUTAGE, GPIO_MODE_OUTPUT); // Define pino como saida
 
 #ifdef COMPILE_ME
 	
@@ -241,7 +240,7 @@ void setup()
 	ledc_channel.timer_sel = LEDC_TIMER_0;
 	ledc_channel_config(&ledc_channel);
 
-	// CONFIGURA O TIMER E INTERRUPCAOO PRINCIPAL-------------------------------------------------------------------------
+	// CONFIGURA O TIMER E INTERRUPCAO ME-------------------------------------------------------------------------
 	const esp_timer_create_args_t my_timer_args = {
 		.callback = &timer_callback,
 		.name = "My Timer"};
@@ -300,7 +299,4 @@ void loop()
 			}
 		}
 #endif
-
-
-
 }

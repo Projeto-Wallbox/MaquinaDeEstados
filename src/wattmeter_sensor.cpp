@@ -121,7 +121,6 @@ calculates the average, saves the filtered values ​​in filteredVolts
 and filteredCurrents*/
 void WattmeterSensor::showRMSvalues()  
 {
-  testOne.testInitShowRMS++;
   float voltsL1 = 0.0;
   float ampsL1 = 0.0;
   float voltsL2 = 0.0;
@@ -134,10 +133,8 @@ void WattmeterSensor::showRMSvalues()
   float instWattsL1 = 0.0;
 
   mySensor.begin(ADRESS_L1);
-  testOne.testBegin++;
   mySensor.readRMS(&voltsL1, &ampsL1); // Read the RMS voltage and current
   mySensor.readInstantaneous(&instVoltsL1, &instAmpsL1, &instWattsL1); // Read the instantaneous
-  testOne.testEndBegin++;
   powerOutage(instVoltsL1); // Call function power Outage
   Wire.endTransmission();
 
@@ -149,24 +146,16 @@ void WattmeterSensor::showRMSvalues()
   // mySensor.readRMS(&voltsL3, &ampsL3); // Read the RMS voltage and current
   // Wire.endTransmission();
 
-  //realizar o filtro
-  updateFilteredVolts(voltsL1*0.810581, voltsL2, voltsL3); //*1.674*0.989
+  //perform the filter of the read values
+  updateFilteredVolts(voltsL1*0.810581, voltsL2, voltsL3); 
   updateFilteredCurrents(ampsL1*2.9175, ampsL2, ampsL3);
 
-  // Serial.print(">L1VoltsFilter:");
-  // Serial.println(myWattmeter.getFilteredVolts(1), 5);
-
-  // Serial.print(">L1AmpsFilter:");
-  // Serial.println(myWattmeter.getFilteredCurrents(1), 5);
-
-  if(filteredCurrentsL1 >=1){
+  if(filteredCurrentsL1 >= 1){
     PowerApparentL1 = filteredCurrentsL1 * filteredVoltsL1;
   }else{
     PowerApparentL1 = 0;
     filteredCurrentsL1 = 0;
   }
-  testOne.testFimShowRMS++;
-
 }
 
 // Calculate energy in kWh
@@ -185,15 +174,6 @@ void WattmeterSensor::initWattmeter(config_wattmeter &params){
     Serial.begin(115200);
     Wire.begin(params.pinsda, params.pinscl);
 
-    // pinMode(UnderVoltage, OUTPUT);
-    // pinMode(OverVoltage, OUTPUT);
-    // pinMode(OverCurrent, OUTPUT);
-
-    //Initialize sensor using default I2C address
-    if (mySensor.begin(0x60) == false)
-    {
-      Serial.print(F("ACS37800 not detected. Check connections and I2C address. Freezing..."));
-    }
 
     mySensor.setBypassNenable(false, true);
     // mySensor.setNumberOfSamples(1023, true);
@@ -204,21 +184,22 @@ void WattmeterSensor::initWattmeter(config_wattmeter &params){
 
 // Detect installation type
 void WattmeterSensor::electricalInstallation(){
-  //Intslacao trifasica
-  if(filteredVoltsL1>200 && filteredVoltsL2>200 && filteredVoltsL3 >200){
+  //Three-phase installation
+  if(filteredVoltsL1 > 200 && filteredVoltsL2 > 200 && filteredVoltsL3 > 200){
       myInstallation = 3;
   }
   
-  //Intslacao monofasica e bifasica
-  if(filteredVoltsL1>200 && filteredVoltsL2<10 && filteredVoltsL3<10){
+  //Single-phase and two-phase installation
+  if(filteredVoltsL1 > 200 && filteredVoltsL2 < 10 && filteredVoltsL3 < 10){
       myInstallation = 1;
   }
 }
 
-// Detects power outage (chamada a cada 0.5 ms)
+// Detects power outage
 void WattmeterSensor::powerOutage(float newInstVolts){
   static int cont_outage = 0;
-  static int number_measurements = 4;
+  static int number_measurements = 5;
+  
   //TODO ajustar number_measurements e o tempo de chamada
   if (newInstVolts >= -5 && newInstVolts <= 5) {
       cont_outage++;
@@ -229,22 +210,14 @@ void WattmeterSensor::powerOutage(float newInstVolts){
 
   //ocorreu uma queda de energia
   if(cont_outage >= number_measurements){  
-    gpio_set_level(PINO_TESTE_POWER_OUTAGE, true); //
+    gpio_set_level(PINO_TESTE_POWER_OUTAGE, true);
     testOne.Flagggg = 1;
     powerOutageFlag = true;
-    testOne.testePowerOutageFlag++;
-    //cont_outage = 0;
   }else{
-    gpio_set_level(PINO_TESTE_POWER_OUTAGE, false); //
+    gpio_set_level(PINO_TESTE_POWER_OUTAGE, false);
     testOne.Flagggg = 0;
     powerOutageFlag = false;
   }
-
-  // if(filteredVoltsL1>=200){
-  //   gpio_set_level(PINO_TESTE_POWER_OUTAGE, false); //
-  //   powerOutageFlag = false;
-  //   testOne.Flagggg = 0;
-  // }
 }
 
 // Change the value of numSamples
@@ -273,9 +246,9 @@ void WattmeterSensor::setOverCurrent(int newOverCurrent) {
 }
 
 // Returns the filtered voltage value (filteredVolts)
-//L1 - Parametro 1
-//L2 - Parametro 2
-//L3 - Parametro 3
+//L1 - Parameter 1
+//L2 - Parameter 2
+//L3 - Parameter 3
 float WattmeterSensor::getFilteredVolts(int line) {
   float voltsFilter;
   if(line==1){
@@ -291,9 +264,9 @@ float WattmeterSensor::getFilteredVolts(int line) {
 }
 
 // Returns the filtered current value (filteredCurrents)
-//L1 - Parametro 1
-//L2 - Parametro 2
-//L3 - Parametro 3
+//L1 - Parameter 1
+//L2 - Parameter 2
+//L3 - Parameter 3
 float WattmeterSensor::getFilteredCurrents(int line) {
   float currentFilter;
   if(line==1){

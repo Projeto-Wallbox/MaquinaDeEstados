@@ -19,7 +19,6 @@
 const int connectorId = 1;
 #endif
 
-
 GlobalStruct DataStruct; //Inicializa estrutura de dados (VER MELHOR FORMA)
 
 //Funcao que deve ser chamada na Interrupcao
@@ -40,9 +39,9 @@ int funcaoInterrupcao()
 	static int estado_veiculo = 12;
 	static int razao_ciclica = 1023;
 	
-	static int corrente_maxima = 32;
-	static int cabo_conectado = 32;   // Verificar 
-	static int currentInstallation = 32;
+	static int corrente_maxima = 32;	// Corrente maxima a ser definida
+	static int cabo_conectado = 32;   // Corrente do cabo da estacao 
+	static int currentInstallation = 32;	// Corrente maxima da instalacao
 
 	// measure_one++;
 	cont_principal++;
@@ -53,7 +52,6 @@ int funcaoInterrupcao()
 	// a cada 166 us (6kHz)
 	medida_piloto = adc1_get_raw(ADC1_CHANNEL_4);	 // Leitura do piloto (1).																			
 	media_piloto = positivaPiloto(medida_piloto); // Calcula a média dos sinais (2)
-	DataStruct.vehicleState = estado_veiculo;  //atualiza estado na struct
 	
 	if (cont_principal >= 6) // a cada 1 ms (1kHz)
 	{
@@ -82,7 +80,6 @@ int funcaoInterrupcao()
 	{
 		if (cont_atualiza >= 600) // a cada 100 ms ( 10 Hz)
 		{
-			stateMachineControl(estado_veiculo, razao_ciclica);
 			//Atuzaliza os dados da estrura "maquinaDeEstados"
 			leBotao();
 			DataStruct.cableCurrent = cabo_conectado;
@@ -91,6 +88,8 @@ int funcaoInterrupcao()
 			DataStruct.Media_Piloto = media_piloto;
 			DataStruct.Ad_Proximidade = medida_proximidade;
 			DataStruct.vehicleState = estado_veiculo;
+			stateMachineControl(estado_veiculo, razao_ciclica);
+
 			cont_atualiza = 0;
 
 		}
@@ -309,24 +308,25 @@ int defineEstado(int media_x1)
 int chargingStationMain(int estado, int corrente_max)
 {	//Entra nessa lógica 1 vez a cada ciclo do PWM (1 kHz)
 	
-	static int razao = 1023;											//Razão cíclica do PWM
-	static int k = 0;															//Contador do bloqueio da contatora
-	static int m = 0;												      //Contador do bloqueio da razão cíclica
-	static int corrente_da_estacao = 0;			      //Corrente máxima que a estaçao irá fornecer
+	static int razao = 1023;											// Razão cíclica do PWM
+	static int k = 0;															// Contador do bloqueio da contatora
+	static int m = 0;												      // Contador do bloqueio da razão cíclica
+	static int corrente_da_estacao = 0;			      // Corrente máxima que a estaçao irá fornecer
 	static int cont = 0;
-	static bool estado_F = false;									//Altera o valor da razão cíclica para 0 quando true (estação com algum erro/não estiver pronta)
-	static bool estadoDispositivoManobra = false;	//Estado do dispositivo de manobra
-	static bool bloqueio_contatora = false;				//Variável que bloqueia a contatora por 6 segundo caso entre no modo ventilação
-	static bool bloqueio_razao_ciclica = false;		//Variável que bloqueia a alteração da razão cíclica por 5 segundos
+	static bool estado_F = false;									// Altera o valor da razão cíclica para 0 quando true (estação com algum erro/não estiver pronta)
+	static bool estadoDispositivoManobra = false;	// Estado do dispositivo de manobra
+	static bool bloqueio_contatora = false;				// Variável que bloqueia a contatora por 6 segundo caso entre no modo ventilação
+	static bool bloqueio_razao_ciclica = false;		// Variável que bloqueia a alteração da razão cíclica por 5 segundos
 	
-	static bool iniciar_recarga = false;					//Variável para autorizar o inicio de recarga
-	static int historyCurrent = 0;					//Salva a ultima alteracão de corrente
-	static bool historyStart = false;					//Salva a ultima alteracão de iniciar recarga
-	static bool changedStart = false;               // 
+	static bool iniciar_recarga = false;					// Variável para autorizar o inicio de recarga
+	static int historyCurrent = 0;					// Salva a ultima alteracão de corrente
+	static bool historyStart = false;					// Salva a ultima alteracão do inicio da recarga (foi iniciado ou finalizado)
+	static bool changedStart = false;               // Flag que armazena que houve uma alteracao na variavel iniciar_recarga
 	
 	DataStruct.changedStart = changedStart;
 	DataStruct.historyStart = historyStart;
 	iniciar_recarga = DataStruct.startChargingByUser;
+	
 	//Verifica de houve um inicio ou fim de recarga pelo usuário
 	if(historyStart != iniciar_recarga){
 		changedStart = true;
@@ -363,7 +363,7 @@ int chargingStationMain(int estado, int corrente_max)
 		if(estado == 6 && iniciar_recarga == true)
 		{
 			k=0;
-			corrente_da_estacao=corrente_max;
+			corrente_da_estacao = corrente_max;
 			if(razao!=1023 && iniciar_recarga == true)			//A contatora não pode fechar antes de o PWM indicar a estação como pronta
 			{
 				cont = 0;
@@ -409,10 +409,18 @@ int chargingStationMain(int estado, int corrente_max)
 		}
 	}
 
-	if(testOne.Flagggg==1){
+	// Accao realizada quando detectar a queda de energia
+	// if(testOne.Flagggg==1){
+	// 	corrente_da_estacao = 0;
+	// // **Salvar algumas variáveis na memoria EEPROM	
+	// }
+
+	if(myWattmeter.getPowerOutageFlag()==true){
 		corrente_da_estacao = 0;
-		//myWattmeter.setPowerOutageFlag(false);
+		// **Salvar algumas variáveis na memoria EEPROM	
 	}
+
+
 	//************Codificação da corrente máxima da estação através da razão cíclica do PWM***********************
 	//Lógica caso a estação não esteja pronta para fornecer energia
 	
@@ -428,10 +436,11 @@ int chargingStationMain(int estado, int corrente_max)
 		bloqueio_razao_ciclica = true;
 	}
 
+	// Bloqueia a razao ciclica, caso ocorra mudanca de corrente durante a recarga (Transicao 6)
 	if(bloqueio_razao_ciclica == true)
 	{
 		m++;
-		if(m >= 5000 || changedStart == true)
+		if(m >= 5000 || changedStart == true) // Quando passou os 5s ou quando ocorreu o inicio da recarga
 		{
 			bloqueio_razao_ciclica = false;
 			changedStart = false;
@@ -439,6 +448,7 @@ int chargingStationMain(int estado, int corrente_max)
 		}
 	}
 	
+	// Caso a razao deva ser de 100%, a corrente deve ser 0
 	if(corrente_da_estacao == 0){
 		changedStart = false;
 		razao = 1023;
@@ -450,7 +460,6 @@ int chargingStationMain(int estado, int corrente_max)
 	}
 
 	return razao;
-
 }
 
 //Funcao para controle dos led indicadores ()
