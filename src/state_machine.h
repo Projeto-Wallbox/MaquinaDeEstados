@@ -20,9 +20,9 @@ extern gpio_num_t LED_B; // Led de carregamento
 extern gpio_num_t LED_C; // Led de conexao a rede Wi-fi
 extern gpio_num_t LED_D; // Led de erro ou falha
 
-extern adc1_channel_t CHANNEL_PILOT; //Configuração do canal ADC para o CP
-extern adc1_channel_t CHANNEL_PROXIMIDADE; //Configuração do canal ADC para o PP
-extern adc1_channel_t CHANNEL_FAULT;
+// extern adc1_channel_t CHANNEL_PILOT; //Configuração do canal ADC para o CP
+// extern adc1_channel_t CHANNEL_PROXIMIDADE; //Configuração do canal ADC para o PP
+// extern adc1_channel_t CHANNEL_FAULT;
 
 
 extern gpio_num_t PIN_FAULT;
@@ -76,10 +76,31 @@ struct GlobalStruct
     int statePinAC;
     int statePinDC;
     int state_F;
+
+  
+
+
 };
+
+
+struct testInterrupt{
+    //Para testes de perda de processamento
+    int testInitShowRMS = 0;
+    int testFimShowRMS = 0;
+    int testBegin = 0;
+    int testEndBegin = 0;          
+
+    int testeContOutage = 0;        //
+    int testePowerOutageFlag = 0;   //
+    int Flagggg;
+};
+
+
 
 // Declaração da variável global
 extern GlobalStruct DataStruct;
+extern testInterrupt testOne; 
+
 
 int funcaoInterrupcao();
 int positivaPiloto(int piloto);

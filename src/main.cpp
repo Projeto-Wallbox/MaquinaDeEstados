@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -21,10 +23,6 @@
 const int connectorId = 1;
 #endif
 
-//#include "SparkFun_ACS37800_Arduino_Library.h"
-//#include <Wire.h>
-//ACS37800 wattmeter; // Create an object of the ACS37800 class
-
 #ifdef COMPILE_WATT
 #include "wattmeter_sensor.h"
 #include <Wire.h>
@@ -37,7 +35,6 @@ const int connectorId = 1;
 #define OVER_VOLTAGE 4
 #define OVER_CURRENT 13
 #endif
-
 
 // DEFINIR PINOS---------------------------------------------------------------------------------
 //DEFINICOES DE PINOS ESP32_DEV
@@ -62,9 +59,9 @@ gpio_num_t PIN_FAULT = GPIO_NUM_34;
 gpio_num_t PIN_TRIG_DC = GPIO_NUM_12;
 gpio_num_t PIN_TRIG_AC = GPIO_NUM_13;
 
+gpio_num_t PINO_TESTE_POWER_OUTAGE = GPIO_NUM_25;
 gpio_num_t PIN_ME = GPIO_NUM_26;
 gpio_num_t PIN_WATT = GPIO_NUM_27;
-
 
 #define SPEED_MODE_TIMER LEDC_HIGH_SPEED_MODE
 #define PIN_SDA 21
@@ -118,32 +115,6 @@ void timer_callback(void *param)
 }
 #endif
 
-// TASK DO MONITOR DE CORRENTE RESIDUAL
-#ifdef COMPILE_D_RES_CURR
-void monitorCurrentTask(void *pvParameters) {	
-		while (1) {
-			int adPinFault = adc1_get_raw(CHANNEL_FAULT); 
-  		DataStruct.statePinDC = gpio_get_level(PIN_TRIG_DC);
-  		DataStruct.statePinAC = gpio_get_level(PIN_TRIG_AC);
-
-			// Serial.print(">adPinFault: ");
-			// Serial.println(adPinFault);
-
-			// Serial.print(">statePinDC: ");
-			// Serial.println(DataStruct.statePinDC);
-
-			// Serial.print(">statePinAC: ");
-			// Serial.println(DataStruct.statePinAC);
-			
-			// UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-			// Serial.print("Espaço livre mínimo da pilha: ");
-			// Serial.println(uxHighWaterMark);
-
-        vTaskDelay(pdMS_TO_TICKS(1)); // Espera por 100 ms
-    }
-}
-#endif
-
 // TASK DO WATTIMETRO
 #ifdef COMPILE_WATT
 void wattmeterTask(void *pvParameters) {
@@ -164,11 +135,12 @@ void wattmeterTask(void *pvParameters) {
 					cont_defineIstallation++;
 				}
   
-        if(cont_pot==1000){
+        if(cont_pot>=1000){
           myWattmeter.calculateEnergy(); 
+					printf("Tensão L1: %0.3f", myWattmeter.getFilteredVolts(1));
+
           cont_pot = 0;
         }
-				//myWattmeter.getFilteredVolts(1)
 				if(cont_meterValue==10000){
 					//myWattmeter.electricalInstallation();
 #ifdef COMPILE_OCPP
@@ -192,7 +164,6 @@ const char *password = "inrilabat";
 #endif
 
 void setup()
-
 {
 	Serial.begin(115200);
 #ifdef COMPILE_WATT
@@ -225,11 +196,6 @@ void setup()
 		Serial.print(F("Connected.\n"));
 #endif
 
-#ifdef COMPILE_ME
-	DataStruct.currentSetByUser = 32; // Valor de corrente externo usuario/APP/OCPP
-	DataStruct.enableButton = true;
-	DataStruct.startChargingByUser = 0;	 // valor alterado para iniciar ou encerrar recarga usuario/APP/OCPP
-
 	gpio_set_direction(PWM_PIN, GPIO_MODE_OUTPUT);			 // Define pino como saida
 	gpio_set_direction(PILOT_PIN, GPIO_MODE_INPUT);		
 	gpio_set_direction(PINO_PROXIMIDADE, GPIO_MODE_INPUT);
@@ -242,10 +208,14 @@ void setup()
 	gpio_set_direction(RELE_L2, GPIO_MODE_OUTPUT);			 // Define pino como saida
 	gpio_set_direction(RELE_L3, GPIO_MODE_OUTPUT);			 // Define pino como saida
 	gpio_set_direction(START_RECHARGER_BT, GPIO_MODE_INPUT); // Define pino como entrada
-	gpio_set_direction(GPIO_NUM_37, GPIO_MODE_OUTPUT); // Define pino como saida
+	
+	gpio_set_direction(PINO_TESTE_POWER_OUTAGE, GPIO_MODE_OUTPUT); // Define pino como saida
 
-	gpio_set_direction(GPIO_NUM_25, GPIO_MODE_OUTPUT); // Define pino como saida
-
+#ifdef COMPILE_ME
+	
+	DataStruct.currentSetByUser = 32; // Valor de corrente externo usuario/APP/OCPP
+	DataStruct.enableButton = true;
+	DataStruct.startChargingByUser = 0;	 // valor alterado para iniciar ou encerrar recarga usuario/APP/OCPP
 	
 	// CONFIGURA OS CANAIS ADC ---------------------------------------------------------------------------
 	esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_12Bit, 0, &adc_chars);
@@ -253,8 +223,7 @@ void setup()
 	adc1_config_channel_atten(CHANNEL_PILOT, ADC_ATTEN_DB_11);  //pino CP
 	adc1_config_channel_atten(CHANNEL_PROXIMIDADE, ADC_ATTEN_DB_11);  //pino PP
 	adc1_config_channel_atten(CHANNEL_FAULT, ADC_ATTEN_DB_11);  //pino PP
-
-
+	
 	// CONFIGURA NEW PWM
 	ledc_timer_config_t ledc_timer = {
 		.speed_mode = SPEED_MODE_TIMER,
@@ -305,9 +274,6 @@ adc1_config_channel_atten(CHANNEL_FAULT, ADC_ATTEN_DB_11);
 	xTaskCreate(wattmeterTask, "Wattmeter Task", 10000, NULL, 1, NULL);
 #endif
 
-#ifdef COMPILE_D_RES_CURR
-//	xTaskCreate(monitorCurrentTask, "Wattmeter Task", 10000, NULL, 2, NULL);
-#endif
 }
 
 
@@ -317,6 +283,7 @@ void loop()
 	mocpp_loop();
 #endif
 
+#ifdef COMPILE_ME
 	if (Serial.available() > 0) { // Verifica se há dados disponíveis para leitura
 			int incomingByte = Serial.read() - '0'; // Lê o byte disponível e converte para int
 			bool value = (incomingByte != 0); // Converte o valor lido para true se for diferente de zero, false se for zero
@@ -332,7 +299,7 @@ void loop()
 					DataStruct.startChargingByUser = false;
 			}
 		}
-
+#endif
 
 
 

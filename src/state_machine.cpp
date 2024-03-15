@@ -51,14 +51,9 @@ int funcaoInterrupcao()
 	static int contNewCurrent = 0;  //Apenas para teste de alteração de corrente
 
 	// a cada 166 us (6kHz)
-	DataStruct.statePinDC = 1;//gpio_get_level(PIN_TRIG_DC);
-  DataStruct.statePinAC = 1;//gpio_get_level(PIN_TRIG_AC);
-
-	medida_piloto = adc1_get_raw(CHANNEL_PILOT);	 // Leitura do piloto (1).																			
+	medida_piloto = adc1_get_raw(ADC1_CHANNEL_4);	 // Leitura do piloto (1).																			
 	media_piloto = positivaPiloto(medida_piloto); // Calcula a média dos sinais (2)
 	DataStruct.vehicleState = estado_veiculo;  //atualiza estado na struct
-	monitorFaultStatus();
-	stateMachineControl(estado_veiculo, razao_ciclica);
 	
 	if (cont_principal >= 6) // a cada 1 ms (1kHz)
 	{
@@ -77,13 +72,17 @@ int funcaoInterrupcao()
     } else {
 			corrente_maxima = cabo_conectado;
     }
-	
+		
+		DataStruct.statePinDC = 1;//gpio_get_level(PIN_TRIG_DC);
+  	DataStruct.statePinAC = 1;//gpio_get_level(PIN_TRIG_AC);
+		monitorFaultStatus();
 		razao_ciclica = chargingStationMain(estado_veiculo, corrente_maxima); // MAQUINAS DE ESTADOS, CONTATORA E CALCULO DA RAZAO CICLICA    (6 e 7)
 	}
 	else
 	{
 		if (cont_atualiza >= 600) // a cada 100 ms ( 10 Hz)
 		{
+			stateMachineControl(estado_veiculo, razao_ciclica);
 			//Atuzaliza os dados da estrura "maquinaDeEstados"
 			leBotao();
 			DataStruct.cableCurrent = cabo_conectado;
@@ -401,7 +400,6 @@ int chargingStationMain(int estado, int corrente_max)
 			//Lógica para 6 segundos após a transição do Estado C para o D ou contatora aberta durante a transição
 			else
 			{
-
 				k = 0;
 				bloqueio_contatora = false;
 				corrente_da_estacao = 0; 
@@ -411,7 +409,7 @@ int chargingStationMain(int estado, int corrente_max)
 		}
 	}
 
-	if(myWattmeter.getPowerOutageFlag()==true){
+	if(testOne.Flagggg==1){
 		corrente_da_estacao = 0;
 		//myWattmeter.setPowerOutageFlag(false);
 	}
@@ -496,11 +494,11 @@ void leBotao(){
     } else {cont = 0;}
 
     if ((cont >= 1 && cont <= 5) && DataStruct.enableButton==true) {
-        DataStruct.startChargingByUser = 1;
+        //DataStruct.startChargingByUser = 1;
     }
 
     if (cont >= 30) {
-        DataStruct.startChargingByUser = 0;
+        //DataStruct.startChargingByUser = 0;
     }
 
 		//pressionado por 7 segundos
@@ -535,36 +533,18 @@ void dispositivoDeManobra(int acao){
 
 //Funcao auxiliar só para printar na tela (Temporária)
 void printTela(){
-	// Serial.print(">Estado: ");
-	// Serial.println(DataStruct.vehicleState);
-	
 	printf("Estado: %d\n\n", DataStruct.vehicleState);
 	//printf("AD CP: %d\n\n", DataStruct.Media_Piloto);
 	
-	// Serial.print(">Cabo: ");
-	// Serial.println(DataStruct.cableCurrent);
-	printf("cableCurrent: %d\n", DataStruct.cableCurrent);
+	// printf("cableCurrent: %d\n", DataStruct.cableCurrent);
 	printf("currentSetByUser: %d\n", DataStruct.currentSetByUser);
 	printf("maximumCurrent: %d\n", DataStruct.maximumCurrent);
-	printf("stationCurrent: %d\n", DataStruct.stationCurrent);
-	printf("historyCurrent: %d\n\n", DataStruct.historyCurrent);
+	// printf("stationCurrent: %d\n", DataStruct.stationCurrent);
+	// printf("historyCurrent: %d\n\n", DataStruct.historyCurrent);
 	// printf("Corrente_usuario: %d\n", Dados.Corrente_Usuario);
 	// printf("Corrente_max: %d\n", Dados.Corrente_Maxima);
 	
-	// Serial.print(">Iniciar_Recarga: ");
-	// Serial.println(DataStruct.startChargingByUser);
-	printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);
-
-	
-	// Serial.print(">Razao: ");
-	// Serial.println(DataStruct.dutyCycle);
-
-	// Serial.print(">statePinDC: ");
-	// Serial.println(DataStruct.statePinDC);
-
-	// Serial.print(">statePinAC: ");
-	// Serial.println(DataStruct.statePinAC);
-	
+	printf("Iniciar_Recarga: %d\n", DataStruct.startChargingByUser);	
 	printf("Razao: %0.2f %%\n\n", static_cast<float>((DataStruct.dutyCycle*100)/1023.0f));
 	// printf("%");
 	//printf("Contador C: %d\n", DataStruct.Contador_C);
@@ -573,14 +553,26 @@ void printTela(){
 #ifdef COMPILE_WATT
 	printf("Instalação: %d\n",myWattmeter.getMyInstallation());
 	printf("Tensão L1: %0.3f   Corrente L1: %0.3f", myWattmeter.getFilteredVolts(1), myWattmeter.getFilteredCurrents(1));
-	printf("  Pot L1: %0.3f", myWattmeter.getPowerApparent());
+	// printf("  Pot L1: %0.3f", myWattmeter.getPowerApparent());
 	
-	printf("\nTensão L2: %0.3f   Corrente L2: %0.3f", myWattmeter.getFilteredVolts(2), myWattmeter.getFilteredCurrents(2));
-	printf("\nTensão L3: %0.3f   Corrente L3: %0.3f", myWattmeter.getFilteredVolts(3), myWattmeter.getFilteredCurrents(3));
+	// printf("\nTensão L2: %0.3f   Corrente L2: %0.3f", myWattmeter.getFilteredVolts(2), myWattmeter.getFilteredCurrents(2));
+	// printf("\nTensão L3: %0.3f   Corrente L3: %0.3f", myWattmeter.getFilteredVolts(3), myWattmeter.getFilteredCurrents(3));
 
 	printf("\n\nEnergia: %0.3f\n", myWattmeter.getEnergy());
 	printf("GetPowerOutageFlag: %s\n", myWattmeter.getPowerOutageFlag() ? "true" : "false");
-	printf("enableButton: %s\n\n", DataStruct.enableButton ? "true" : "false");
+	printf("Flagggg: %d\n", testOne.Flagggg);
+
+	// printf("enableButton: %s\n\n", DataStruct.enableButton ? "true" : "false");
+
+	// printf("testInitShowRMS: %d\n", testOne.testInitShowRMS);
+
+	// printf("testBegin: %d\n", testOne.testBegin);
+	// printf("testEndBegin: %d\n\n", testOne.testEndBegin);
+
+	// printf("testeContOutage: %d\n", testOne.testeContOutage);
+	// printf("testePowerOutageFlag: %d\n", testOne.testePowerOutageFlag);
+	
+	// printf("\ntestFimShowRMS: %d\n\n", testOne.testFimShowRMS);
 
 #endif
 
@@ -603,6 +595,7 @@ void printTela(){
 }
 
 void stateMachineControl(int state, int dutyCycle){
+	
 	if((state == -12 || state == 0) && DataStruct.mcFaulted == false){ 
 		DataStruct.mcFaulted=true;
 		DataStruct.mcAvailable=false;

@@ -1,11 +1,13 @@
 #include "SparkFun_ACS37800_Arduino_Library.h" 
 #include <Wire.h>
 #include "wattmeter_sensor.h"
+#include "state_machine.h"
 #include <vector>
 gpio_num_t PINO_TESTE_POWER_OUTAGE = GPIO_NUM_25;
 
 ACS37800 mySensor;            // Create an object of the ACS37800 class
 WattmeterSensor myWattmeter;  // Create an object of the WattmeterSensor class
+testInterrupt testOne; 
 
 // Calculation of the average of the last samples (numSamples) stored in voltsBuffer[]
 void WattmeterSensor::updateFilteredVolts(float vL1, float vL2, float vL3)
@@ -119,6 +121,7 @@ calculates the average, saves the filtered values ​​in filteredVolts
 and filteredCurrents*/
 void WattmeterSensor::showRMSvalues()  
 {
+  testOne.testInitShowRMS++;
   float voltsL1 = 0.0;
   float ampsL1 = 0.0;
   float voltsL2 = 0.0;
@@ -131,8 +134,10 @@ void WattmeterSensor::showRMSvalues()
   float instWattsL1 = 0.0;
 
   mySensor.begin(ADRESS_L1);
+  testOne.testBegin++;
   mySensor.readRMS(&voltsL1, &ampsL1); // Read the RMS voltage and current
   mySensor.readInstantaneous(&instVoltsL1, &instAmpsL1, &instWattsL1); // Read the instantaneous
+  testOne.testEndBegin++;
   powerOutage(instVoltsL1); // Call function power Outage
   Wire.endTransmission();
 
@@ -145,7 +150,7 @@ void WattmeterSensor::showRMSvalues()
   // Wire.endTransmission();
 
   //realizar o filtro
-  updateFilteredVolts(voltsL1*0.8404*0.9513, voltsL2, voltsL3); //*1.674*0.989
+  updateFilteredVolts(voltsL1*0.810581, voltsL2, voltsL3); //*1.674*0.989
   updateFilteredCurrents(ampsL1*2.9175, ampsL2, ampsL3);
 
   // Serial.print(">L1VoltsFilter:");
@@ -160,7 +165,8 @@ void WattmeterSensor::showRMSvalues()
     PowerApparentL1 = 0;
     filteredCurrentsL1 = 0;
   }
-  
+  testOne.testFimShowRMS++;
+
 }
 
 // Calculate energy in kWh
@@ -216,26 +222,29 @@ void WattmeterSensor::powerOutage(float newInstVolts){
   //TODO ajustar number_measurements e o tempo de chamada
   if (newInstVolts >= -5 && newInstVolts <= 5) {
       cont_outage++;
+      testOne.testeContOutage++;
   } else {
       cont_outage = 0; // Reinicia o contador se a tensão não estiver dentro do intervalo
   }
 
   //ocorreu uma queda de energia
-  if (cont_outage >= number_measurements) {  
-      gpio_set_level(PINO_TESTE_POWER_OUTAGE, true); //
-      powerOutageFlag = true;
-      cont_outage = 0;
-     //
-  }
-
-  if(filteredVoltsL1>=200){
+  if(cont_outage >= number_measurements){  
+    gpio_set_level(PINO_TESTE_POWER_OUTAGE, true); //
+    testOne.Flagggg = 1;
+    powerOutageFlag = true;
+    testOne.testePowerOutageFlag++;
+    //cont_outage = 0;
+  }else{
     gpio_set_level(PINO_TESTE_POWER_OUTAGE, false); //
+    testOne.Flagggg = 0;
     powerOutageFlag = false;
   }
-  // else{
-  //   gpio_set_level(PINO_TESTE_POWER_OUTAGE, false); 
+
+  // if(filteredVoltsL1>=200){
+  //   gpio_set_level(PINO_TESTE_POWER_OUTAGE, false); //
   //   powerOutageFlag = false;
-  //   }
+  //   testOne.Flagggg = 0;
+  // }
 }
 
 // Change the value of numSamples
