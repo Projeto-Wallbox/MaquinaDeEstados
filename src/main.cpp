@@ -227,7 +227,7 @@ void setup()
 #endif
 
 #ifdef COMPILE_ME
-	DataStruct.currentSetByUser = 14; // Valor de corrente externo usuario/APP/OCPP
+	DataStruct.currentSetByUser = 6; // Valor de corrente externo usuario/APP/OCPP
 	DataStruct.enableButton = false;
 	DataStruct.startChargingByUser = 0;	 // valor alterado para iniciar ou encerrar recarga usuario/APP/OCPP
 

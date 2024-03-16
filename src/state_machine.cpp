@@ -124,11 +124,11 @@ int funcaoInterrupcao()
 //Função que calcula média dos sinais lidos no AD Piloto
 int positivaPiloto(int piloto)
 {
-	static int j=0;											//Lógica de determinação do valor máximo de um período
-	static int media[5] = {0,0,0,0,0};			//5 maiores valores medidos em um período
+	static int j=0;											// Lógica de determinação do valor máximo de um período
+	static int media[5] = {0,0,0,0,0};			// 5 maiores valores medidos em um período
 	static int media_piloto = 4000;
 	
-	if(j>=120)		//Quando atinge 120 amostras reinicia o processo de coleta de dados
+	if(j>=360)		// Quando atinge 120 amostras reinicia o processo de coleta de dados
 	{
 		media[0]=0;
 		media[1]=0;
@@ -189,7 +189,7 @@ int positivaPiloto(int piloto)
 		{
 			media_piloto=media_piloto;
 		}
-		if(j<120)		//Antes da amostra 120 não atualize a média do piloto, ou seja, não atualize a média dentro de 20 ms da última atualização
+		if(j<360)		//Antes da amostra 120 não atualize a média do piloto, ou seja, não atualize a média dentro de 20 ms da última atualização
 		{
 			media_piloto=media_piloto;
 		}
