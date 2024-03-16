@@ -110,11 +110,11 @@ int Razao_Ciclica_PWM = 1023;					// Variavel que armazena valor da razao ciclli
 // FUNCAO DE INTERRUPCAO DA ME
 void timer_callback(void *param)
 {
-	gpio_set_level(PIN_ME, true);
+	//gpio_set_level(PIN_ME, true);
 	Razao_Ciclica_PWM = funcaoInterrupcao();
 	ESP_ERROR_CHECK(ledc_set_duty(SPEED_MODE_TIMER, LEDC_CHANNEL_0, Razao_Ciclica_PWM));
 	ESP_ERROR_CHECK(ledc_update_duty(SPEED_MODE_TIMER, LEDC_CHANNEL_0));
-	gpio_set_level(PIN_ME, false);
+	//gpio_set_level(PIN_ME, false);
 }
 #endif
 
@@ -152,7 +152,7 @@ void wattmeterTask(void *pvParameters) {
 		int cont_defineIstallation = 0;
 
 		while (1) {
-				gpio_set_level(PIN_WATT, true);
+				//gpio_set_level(PIN_WATT, true);
 				cont_pot++;
 				cont_meterValue++;
 				
@@ -176,7 +176,7 @@ void wattmeterTask(void *pvParameters) {
 #endif
         }
         UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-				gpio_set_level(PIN_WATT, false);
+				//gpio_set_level(PIN_WATT, false);
         vTaskDelay(pdMS_TO_TICKS(1)); // Espera por 1 ms
     }
 }
@@ -192,9 +192,10 @@ const char *password = "inrilabat";
 #endif
 
 void setup()
-
 {
 	Serial.begin(115200);
+	Serial.print(F("Teste SETUP"));
+
 #ifdef COMPILE_WATT
 	config_wattmeter my_config = {
 		.pinscl = PIN_SCL,  
@@ -226,7 +227,7 @@ void setup()
 #endif
 
 #ifdef COMPILE_ME
-	DataStruct.currentSetByUser = 20; // Valor de corrente externo usuario/APP/OCPP
+	DataStruct.currentSetByUser = 14; // Valor de corrente externo usuario/APP/OCPP
 	DataStruct.enableButton = false;
 	DataStruct.startChargingByUser = 0;	 // valor alterado para iniciar ou encerrar recarga usuario/APP/OCPP
 
@@ -244,7 +245,7 @@ void setup()
 	gpio_set_direction(START_RECHARGER_BT, GPIO_MODE_INPUT); // Define pino como entrada
 	gpio_set_direction(GPIO_NUM_37, GPIO_MODE_OUTPUT); // Define pino como saida
 
-	gpio_set_direction(GPIO_NUM_25, GPIO_MODE_OUTPUT); // Define pino como saida
+	//gpio_set_direction(GPIO_NUM_25, GPIO_MODE_OUTPUT); // Define pino como saida
 
 	
 	// CONFIGURA OS CANAIS ADC ---------------------------------------------------------------------------
@@ -278,7 +279,7 @@ void setup()
 		.name = "My Timer"};
 	esp_timer_handle_t timer_handler;
 	ESP_ERROR_CHECK(esp_timer_create(&my_timer_args, &timer_handler));
-	ESP_ERROR_CHECK(esp_timer_start_periodic(timer_handler, 167)); // 167 u,f= 6kHz P/ler 6 amostras de um ciclo PWM
+	ESP_ERROR_CHECK(esp_timer_start_periodic(timer_handler, 83)); // 167 u,f= 6kHz P/ler 6 amostras de um ciclo PWM
 #endif
 
 #ifdef COMPILE_D_RES_CURR

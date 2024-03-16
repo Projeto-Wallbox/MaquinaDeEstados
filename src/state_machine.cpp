@@ -54,13 +54,13 @@ int funcaoInterrupcao()
 	DataStruct.statePinDC = 1;//gpio_get_level(PIN_TRIG_DC);
   DataStruct.statePinAC = 1;//gpio_get_level(PIN_TRIG_AC);
 
-	medida_piloto = adc1_get_raw(ADC1_CHANNEL_4);	 // Leitura do piloto (1).																			
+	medida_piloto = adc1_get_raw(ADC1_CHANNEL_7);	 // Leitura do piloto (1).																			
 	media_piloto = positivaPiloto(medida_piloto); // Calcula a média dos sinais (2)
 	DataStruct.vehicleState = estado_veiculo;  //atualiza estado na struct
 	monitorFaultStatus();
 	stateMachineControl(estado_veiculo, razao_ciclica);
 	
-	if (cont_principal >= 6) // a cada 1 ms (1kHz)
+	if (cont_principal >= 12) // a cada 1 ms (1kHz)
 	{
 	
 		cont_principal = 0;
@@ -82,7 +82,7 @@ int funcaoInterrupcao()
 	}
 	else
 	{
-		if (cont_atualiza >= 600) // a cada 100 ms ( 10 Hz)
+		if (cont_atualiza >= 1200) // a cada 100 ms ( 10 Hz)
 		{
 			//Atuzaliza os dados da estrura "maquinaDeEstados"
 			leBotao();
@@ -97,7 +97,7 @@ int funcaoInterrupcao()
 		}
 		else
 		{
-			if (cont_interfaceUsuario >= 6000) // a cada 1000 ms (1 Hz)
+			if (cont_interfaceUsuario >= 12000) // a cada 1000 ms (1 Hz)
 			{ 
 				//acendeLed();
 				// if(DataStruct.vehicleState == 6 && contNewCurrent<=20){
