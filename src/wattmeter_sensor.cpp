@@ -1,11 +1,13 @@
 #include "SparkFun_ACS37800_Arduino_Library.h" 
 #include <Wire.h>
+#include "state_machine.h"
 #include "wattmeter_sensor.h"
 #include <vector>
-gpio_num_t PINO_TESTE_POWER_OUTAGE = GPIO_NUM_25;
+//gpio_num_t PINO_TESTE_POWER_OUTAGE = GPIO_NUM_25;
 
 ACS37800 mySensor;            // Create an object of the ACS37800 class
 WattmeterSensor myWattmeter;  // Create an object of the WattmeterSensor class
+testInterrupt testOne; 
 
 // Calculation of the average of the last samples (numSamples) stored in voltsBuffer[]
 void WattmeterSensor::updateFilteredVolts(float vL1, float vL2, float vL3)
@@ -145,7 +147,7 @@ void WattmeterSensor::showRMSvalues()
   // Wire.endTransmission();
 
   //realizar o filtro
-  updateFilteredVolts(voltsL1*0.8404*0.9513, voltsL2, voltsL3); //*1.674*0.989
+  updateFilteredVolts(voltsL1*0.810581, voltsL2, voltsL3); //*1.674*0.989
   updateFilteredCurrents(ampsL1*2.9175, ampsL2, ampsL3);
 
   // Serial.print(">L1VoltsFilter:");
@@ -210,33 +212,31 @@ void WattmeterSensor::electricalInstallation(){
 }
 
 // Detects power outage (chamada a cada 0.5 ms)
+// Detects power outage
 void WattmeterSensor::powerOutage(float newInstVolts){
   static int cont_outage = 0;
-  static int number_measurements = 4;
+  static int number_measurements = 5;
+  
   //TODO ajustar number_measurements e o tempo de chamada
   if (newInstVolts >= -5 && newInstVolts <= 5) {
       cont_outage++;
+      testOne.testeContOutage++;
   } else {
       cont_outage = 0; // Reinicia o contador se a tensão não estiver dentro do intervalo
   }
 
   //ocorreu uma queda de energia
-  if (cont_outage >= number_measurements) {  
-      gpio_set_level(PINO_TESTE_POWER_OUTAGE, true); //
-      powerOutageFlag = true;
-      cont_outage = 0;
-     //
-  }
-
-  if(filteredVoltsL1>=200){
-    gpio_set_level(PINO_TESTE_POWER_OUTAGE, false); //
+  if(cont_outage >= number_measurements){  
+    //gpio_set_level(PINO_TESTE_POWER_OUTAGE, true);
+    testOne.FlagOutage = 1;
+    powerOutageFlag = true;
+  }else{
+    //gpio_set_level(PINO_TESTE_POWER_OUTAGE, false);
+    testOne.FlagOutage = 0;
     powerOutageFlag = false;
   }
-  // else{
-  //   gpio_set_level(PINO_TESTE_POWER_OUTAGE, false); 
-  //   powerOutageFlag = false;
-  //   }
 }
+
 
 // Change the value of numSamples
 void WattmeterSensor::setNumSamples(int newSamples){

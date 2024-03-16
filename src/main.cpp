@@ -226,8 +226,8 @@ void setup()
 #endif
 
 #ifdef COMPILE_ME
-	DataStruct.currentSetByUser = 32; // Valor de corrente externo usuario/APP/OCPP
-	DataStruct.enableButton = true;
+	DataStruct.currentSetByUser = 20; // Valor de corrente externo usuario/APP/OCPP
+	DataStruct.enableButton = false;
 	DataStruct.startChargingByUser = 0;	 // valor alterado para iniciar ou encerrar recarga usuario/APP/OCPP
 
 	gpio_set_direction(PWM_PIN, GPIO_MODE_OUTPUT);			 // Define pino como saida

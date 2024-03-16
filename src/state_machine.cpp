@@ -54,7 +54,7 @@ int funcaoInterrupcao()
 	DataStruct.statePinDC = 1;//gpio_get_level(PIN_TRIG_DC);
   DataStruct.statePinAC = 1;//gpio_get_level(PIN_TRIG_AC);
 
-	medida_piloto = adc1_get_raw(CHANNEL_PILOT);	 // Leitura do piloto (1).																			
+	medida_piloto = adc1_get_raw(ADC1_CHANNEL_4);	 // Leitura do piloto (1).																			
 	media_piloto = positivaPiloto(medida_piloto); // Calcula a média dos sinais (2)
 	DataStruct.vehicleState = estado_veiculo;  //atualiza estado na struct
 	monitorFaultStatus();
@@ -125,8 +125,8 @@ int funcaoInterrupcao()
 int positivaPiloto(int piloto)
 {
 	static int j=0;											//Lógica de determinação do valor máximo de um período
-	static int media[5]={0,0,0,0,0};			//5 maiores valores medidos em um período
-	static int media_piloto=4000;
+	static int media[5] = {0,0,0,0,0};			//5 maiores valores medidos em um período
+	static int media_piloto = 4000;
 	
 	if(j>=120)		//Quando atinge 120 amostras reinicia o processo de coleta de dados
 	{
@@ -185,7 +185,7 @@ int positivaPiloto(int piloto)
 				}
 			}
 		}
-		else				//Se for menor ou igual não armazene
+		else  // Se for menor ou igual não armazene
 		{
 			media_piloto=media_piloto;
 		}
@@ -411,10 +411,14 @@ int chargingStationMain(int estado, int corrente_max)
 		}
 	}
 
-	if(myWattmeter.getPowerOutageFlag()==true){
+	// if(myWattmeter.getPowerOutageFlag()==true){
+	// 	corrente_da_estacao = 0;
+	// }
+
+	if(testOne.FlagOutage == 1){
 		corrente_da_estacao = 0;
-		//myWattmeter.setPowerOutageFlag(false);
 	}
+
 	//************Codificação da corrente máxima da estação através da razão cíclica do PWM***********************
 	//Lógica caso a estação não esteja pronta para fornecer energia
 	
