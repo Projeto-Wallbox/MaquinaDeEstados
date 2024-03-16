@@ -173,6 +173,9 @@ void wattmeterTask(void *pvParameters) {
 					//myWattmeter.electricalInstallation();
 #ifdef COMPILE_OCPP
           addMeterValueInput([](){return myWattmeter.getFilteredVolts(1);}, "Voltage","V",nullptr, nullptr,connectorId);
+		  addMeterValueInput([](){return myWattmeter.getFilteredCurrents(1).;}, "Current.Import","A",nullptr, nullptr,connectorId);
+		  addMeterValueInput([](){return myWattmeter.getPowerApparent();}, "Power.Active.Import", "W", nullptr, nullptr, connectorId);
+
 #endif
         }
         UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
@@ -187,8 +190,8 @@ void wattmeterTask(void *pvParameters) {
 const char *OCPP_BACKEND_URL = "ws://200.18.75.25:3223"; //servidor
 const char *OCPP_CHARGE_BOX_ID = "IntrallWallbox";
 
-const char *ssid = "LabAT";
-const char *password = "inrilabat";
+const char *ssid = "Galaxy_M51";
+const char *password = "testeesp";
 #endif
 
 void setup()
@@ -298,8 +301,21 @@ adc1_config_channel_atten(CHANNEL_FAULT, ADC_ATTEN_DB_11);
 	setSmartChargingCurrentOutput([](float limit)
 								  {
 	      Serial.printf("[main] Smart Charging allows maximum charge rate: %.0f A\n", limit);
-	      return 32.f; },
+	      return 6.f; },
 								  connectorId);
+
+	setOnSendConf("RemoteStopTransaction", [] (JsonObject payload) -> void {
+        if (!strcmp(payload["status"], "Accepted")) {
+            endTransaction(nullptr, "Remote");
+			DataStruct.startChargingByUser = false;
+        }
+    });
+
+    setOnSendConf("RemoteStartTransaction", [] (JsonObject payload) -> void {
+        if (!strcmp(payload["status"], "Accepted")) {
+            DataStruct.startChargingByUser = true;
+        }
+    });
 #endif
 
 #ifdef COMPILE_WATT
