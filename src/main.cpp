@@ -172,9 +172,9 @@ void wattmeterTask(void *pvParameters) {
 				if(cont_meterValue==10000){
 					//myWattmeter.electricalInstallation();
 #ifdef COMPILE_OCPP
-          addMeterValueInput([](){return myWattmeter.getFilteredVolts(1);}, "Voltage","V",nullptr, nullptr,connectorId);
-		  addMeterValueInput([](){return myWattmeter.getFilteredCurrents(1).;}, "Current.Import","A",nullptr, nullptr,connectorId);
-		  addMeterValueInput([](){return myWattmeter.getPowerApparent();}, "Power.Active.Import", "W", nullptr, nullptr, connectorId);
+      		addMeterValueInput([](){return myWattmeter.getFilteredVolts(1);}, "Voltage","V",nullptr, nullptr,connectorId);
+		  		addMeterValueInput([](){return myWattmeter.getFilteredCurrents(1);}, "Current.Import","A",nullptr, nullptr,connectorId);
+		  		addMeterValueInput([](){return myWattmeter.getPowerApparent();}, "Power.Active.Import", "W", nullptr, nullptr, connectorId);
 
 #endif
         }
@@ -334,21 +334,21 @@ void loop()
 	mocpp_loop();
 #endif
 
-	if (Serial.available() > 0) { // Verifica se há dados disponíveis para leitura
-			int incomingByte = Serial.read() - '0'; // Lê o byte disponível e converte para int
-			bool value = (incomingByte != 0); // Converte o valor lido para true se for diferente de zero, false se for zero
+	// if (Serial.available() > 0) { // Verifica se há dados disponíveis para leitura
+	// 		int incomingByte = Serial.read() - '0'; // Lê o byte disponível e converte para int
+	// 		bool value = (incomingByte != 0); // Converte o valor lido para true se for diferente de zero, false se for zero
 
-			if (value) {
-				//DataStruct.statePinDC = 1;
-				//DataStruct.enableButton = true;
-				DataStruct.startChargingByUser = true;
-			} 
-			if(value == false){
-					//DataStruct.statePinDC = 0;
-					//DataStruct.enableButton = false;
-					DataStruct.startChargingByUser = false;
-			}
-		}
+	// 		if (value) {
+	// 			//DataStruct.statePinDC = 1;
+	// 			//DataStruct.enableButton = true;
+	// 			DataStruct.startChargingByUser = true;
+	// 		} 
+	// 		if(value == false){
+	// 				//DataStruct.statePinDC = 0;
+	// 				//DataStruct.enableButton = false;
+	// 				DataStruct.startChargingByUser = false;
+	// 		}
+	// 	}
 
 
 

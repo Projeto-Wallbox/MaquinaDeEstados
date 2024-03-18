@@ -589,7 +589,7 @@ void printTela(){
 #endif
 
 #ifdef COMPILE_OCPP
-	printf("\n\nAvailable: %d\n", DataStruct.mcAvailable);
+	printf("Available: %d\n", DataStruct.mcAvailable);
 	printf("Preparing: %d\n", DataStruct.mcPreparing);
 	printf("Charging: %d\n", DataStruct.mcCharging);
 	printf("Finishing: %d\n", DataStruct.mcFinishing);

@@ -147,7 +147,7 @@ void WattmeterSensor::showRMSvalues()
   // Wire.endTransmission();
 
   //realizar o filtro
-  updateFilteredVolts(voltsL1*1.01363, voltsL2, voltsL3); //*1.674*0.989
+  updateFilteredVolts(voltsL1*0.810581*1.01363, voltsL2, voltsL3); //*1.674*0.989
   updateFilteredCurrents(ampsL1*2.9175, ampsL2, ampsL3);
 
   // Serial.print(">L1VoltsFilter:");
